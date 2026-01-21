@@ -21,17 +21,9 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 export default function RegulatoryBodyHome() {
-  const navigate = useNavigate();
   return (
     <div className="p-4 space-y-6 bg-gray-50/50 min-h-screen">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-8 h-8 bg-black hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
-      </div>
+      
       {/* Top Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -63,7 +55,7 @@ export default function RegulatoryBodyHome() {
           <ChartCard
             title="Blood Inventory"
             filters={[{ label: "Blood type", options: ["All", "A+", "B+"] }]}
-            className="h-[500px]"
+            className="h-full"
           >
             <BloodInventoryMap />
             <div className="grid grid-cols-4 gap-4 mt-6 text-xs text-gray-500">
@@ -286,6 +278,7 @@ export default function RegulatoryBodyHome() {
               { label: "Blood type", options: ["All"] },
               { label: "Last 7 days", options: ["Last 7 days"] },
             ]}
+            className=""
           >
             <div className="text-xs text-gray-500 mb-4">
               Blood Demand & Supply Trend Chart for Q1 2024 - Q4 2024
@@ -297,7 +290,7 @@ export default function RegulatoryBodyHome() {
 
       {/* Inventory Stock - Full Width/Centred */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
+        <div className="lg:col-span-2 col-span-3">
           <ChartCard
             className="h-full"
             title="Inventory Stock"
@@ -313,7 +306,7 @@ export default function RegulatoryBodyHome() {
           </ChartCard>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 col-span-3 lg:col-span-1">
           <Card className="shadow-sm border border-gray-100">
             <CardHeader className="flex flex-row justify-between items-center pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-500">

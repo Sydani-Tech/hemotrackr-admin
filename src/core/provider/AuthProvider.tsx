@@ -68,6 +68,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       // Extract role from the user object as per updated requirement
       const responseRole = responseUser.role;
+      console.log("AuthProvider: Login success", {
+        responseRole,
+        responseUser,
+      });
 
       // Ensure token exists before proceeding (since it's now optional in interface)
       if (!responseToken) {
@@ -81,6 +85,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.setItem("token", responseToken);
       localStorage.setItem("user", JSON.stringify(responseUser));
       localStorage.setItem("role", responseRole);
+
+      console.log(
+        "AuthProvider: State updated, navigating based on role...",
+        responseRole,
+      );
 
       // Redirect based on role
       switch (responseRole) {
@@ -96,7 +105,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         case "admin": // Assuming admin role string
           navigate("/regulation/dashboard");
           break;
+        case "regulatory_body":
+          console.log("AuthProvider: Navigating to /regulation/dashboard");
+          navigate("/regulation/dashboard");
+          break;
         default:
+          console.warn("AuthProvider: Unknown role, navigating to /");
           navigate("/");
           break;
       }

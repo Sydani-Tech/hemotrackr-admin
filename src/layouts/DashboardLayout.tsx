@@ -12,6 +12,7 @@ import {
 
 const DashboardLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -41,48 +42,40 @@ const DashboardLayout = () => {
       icon: Calendar,
       type: "appointment",
     },
-    {
-      id: 2,
-      title: "New Donor Request",
-      message: "You have a new donor request from uni-port teaching hospital",
-      time: "Tuesday, June 14, 2024 18:16:1",
-      icon: Clock,
-      type: "request",
-    },
-    {
-      id: 3,
-      title: "Donor Reminder",
-      message: "You have a reminder on donor",
-      time: "Tuesday, June 14, 2024 18:16:1",
-      icon: Plus,
-      type: "reminder",
-    },
-    {
-      id: 4,
-      title: "New Donor Request",
-      message: "You have a new donor request from uni-port teaching hospital",
-      time: "Tuesday, June 14, 2024 18:16:1",
-      icon: Plus,
-      type: "request",
-    },
+    // ... other notifications
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="pl-64 flex flex-col min-h-screen">
+      <div className="lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
           <div className="flex items-center gap-4">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 rounded-lg hover:bg-gray-100 lg:hidden"
+            >
+              <div className="space-y-1.5">
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+              </div>
+            </button>
             {/* Header Left Content (if any) */}
           </div>
 
-          <div className="flex-1 px-12">
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-gray-900">Good Morning</h1>
-              <p className="text-sm text-gray-500">Welcome back, Preye</p>
+          <div className="flex-1 px-4 lg:px-12">
+            <div className="flex lg:flex-col flex-row items-center lg:items-start gap-2 lg:gap-0">
+              <h1 className="lg:text-lg text-sm font-bold text-gray-900">
+                Good Morning
+              </h1>
+              <p className="lg:text-sm text-xs text-gray-500">
+                Welcome back, Preye
+              </p>
             </div>
           </div>
 
@@ -138,8 +131,8 @@ const DashboardLayout = () => {
                               item.type === "appointment"
                                 ? "bg-blue-100 text-blue-600"
                                 : item.type === "request"
-                                ? "bg-gray-100 text-gray-600"
-                                : "bg-blue-100 text-blue-600"
+                                  ? "bg-gray-100 text-gray-600"
+                                  : "bg-blue-100 text-blue-600"
                             }`}
                           >
                             <item.icon className="w-4 h-4" />

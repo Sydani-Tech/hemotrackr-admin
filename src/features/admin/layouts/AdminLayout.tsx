@@ -3,7 +3,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { MessageCircle, Bell, Search, Plus } from "lucide-react";
 
-const DashboardLayout = () => {
+const AdminLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -39,7 +39,7 @@ const DashboardLayout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 font-sans">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main Content Area */}
@@ -63,10 +63,10 @@ const DashboardLayout = () => {
 
           <div className="flex-1 px-4 lg:px-12">
             <div className="flex lg:flex-col flex-row items-center lg:items-start gap-2 lg:gap-0">
-              <h1 className="lg:text-lg text-sm font-bold text-gray-900">
+              <h1 className="lg:text-lg text-sm font-bold text-gray-900 line-clamp-1">
                 Good Morning
               </h1>
-              <p className="lg:text-sm text-xs text-gray-500">
+              <p className="lg:text-sm text-xs text-gray-500 line-clamp-1">
                 Welcome back, UNIPORT Teaching Hospital
               </p>
             </div>
@@ -105,7 +105,7 @@ const DashboardLayout = () => {
                     <button
                       onClick={() => {
                         setShowNotifications(false);
-                        navigate("/blood-bank/notifications");
+                        navigate("/hospital/notifications");
                       }}
                       className="text-blue-500 text-xs font-bold hover:underline"
                     >
@@ -159,4 +159,4 @@ const DashboardLayout = () => {
   );
 };
 
-export default DashboardLayout;
+export default AdminLayout;

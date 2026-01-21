@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { regulatoryRoutes } from "../../../core/routes/RegulatoryRoutes";
+import { adminRoutes } from "../../../core/routes/AdminRoutes";
 import { cn } from "../../../lib/utils";
 import { useLogout } from "../../../core/hooks/useAuthQueries";
 import { X } from "lucide-react";
@@ -13,8 +13,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation();
   const { mutate: logout, isPending } = useLogout();
 
-  const primaryRoutes = regulatoryRoutes.filter((route) => !route.section);
-  const secondaryRoutes = regulatoryRoutes.filter(
+  const primaryRoutes = adminRoutes.filter((route) => !route.section);
+  const secondaryRoutes = adminRoutes.filter(
     (route) => route.section === "secondary",
   );
 
@@ -25,8 +25,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   };
 
   const NavItem = ({ route }: { route: any }) => {
-    // In regulatoryRoutes, the dashboard path is /regulation/dashboard
-    // We check if current path starts with route path
     const isActive = location.pathname.startsWith(route.path);
 
     if (route.name === "Logout") {

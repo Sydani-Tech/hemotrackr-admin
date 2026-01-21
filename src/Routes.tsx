@@ -66,6 +66,15 @@ import { PublicRoute } from "./core/routes/PublicRoute";
 
 // Services (for loaders)
 import { bloodBankDashboardLoader } from "./core/services/blood-bank/blood-bank-dashboard.loader";
+import AdminLayout from "./features/admin/layouts/AdminLayout";
+import AdminHome from "./features/admin/pages/Home";
+import HealthFacilities from "./features/admin/pages/HealthFacilities";
+import FacilityDetails from "./features/admin/pages/FacilityDetails";
+import AdminBloodBanks from "./features/admin/pages/AdminBloodBanks";
+import AdminMessages from "./features/admin/pages/AdminMessages";
+import AdminInventory from "./features/admin/pages/AdminInventory";
+import AdminInventoryDetails from "./features/admin/pages/AdminInventoryDetails";
+import AdminSettings from "./features/admin/pages/AdminSettings";
 
 // AuthWrapper component to ensure AuthProvider is inside the Router context
 const AuthWrapper = () => (
@@ -211,7 +220,7 @@ const router = createBrowserRouter([
         ],
       },
       {
-        element: <ProtectedRoute allowedRoles={["admin"]} />,
+        element: <ProtectedRoute allowedRoles={["regulatory_body"]} />,
         children: [
           {
             path: "/regulation",
@@ -221,7 +230,6 @@ const router = createBrowserRouter([
               {
                 path: "dashboard",
                 element: <RegulatoryBodyHome />,
-                // loader: adminDashboardLoader,
               },
               { path: "compliance", element: <RegulatoryBodyCompliance /> },
               { path: "blood-banks", element: <RegulatoryBodyBloodBanks /> },
@@ -238,6 +246,30 @@ const router = createBrowserRouter([
                 path: "*",
                 element: <div className="p-4">Page under construction</div>,
               },
+            ],
+          },
+        ],
+      },
+      {
+        element: <ProtectedRoute allowedRoles={["admin"]} />,
+        children: [
+          {
+            path: "/admin",
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <Navigate to="dashboard" /> },
+              {
+                path: "dashboard",
+                element: <AdminHome />,
+              },
+              { path: "health-facilities", element: <HealthFacilities /> },
+              { path: "health-facilities/:id", element: <FacilityDetails /> },
+              { path: "blood-banks", element: <AdminBloodBanks /> },
+              { path: "blood-banks/:id", element: <FacilityDetails /> },
+              { path: "messages", element: <AdminMessages /> },
+              { path: "inventory", element: <AdminInventory /> },
+              { path: "inventory/:id", element: <AdminInventoryDetails /> },
+              { path: "settings", element: <AdminSettings /> },
             ],
           },
         ],

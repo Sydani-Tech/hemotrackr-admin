@@ -5,6 +5,7 @@ import Sidebar from "../components/Sidebar";
 
 const RegulatoryBodyLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -39,20 +40,31 @@ const RegulatoryBodyLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="pl-64 flex flex-col min-h-screen">
+      <div className="lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-40">
+        <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
           <div className="flex items-center gap-4">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 rounded-lg hover:bg-gray-100 lg:hidden"
+            >
+              <div className="space-y-1.5">
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+                <span className="block w-6 h-0.5 bg-gray-600"></span>
+              </div>
+            </button>
             {/* Header Left Content (if any) */}
           </div>
 
           <div className="flex-1 px-12">
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-gray-900">Good Morning</h1>
-              <p className="text-sm text-gray-500">
+            <div className="flex lg:flex-col flex-row">
+              <h1 className="lg:text-lg text-sm font-bold text-gray-900">Good Morning</h1>
+              <p className="lg:text-sm text-xs text-gray-500">
                 Welcome back, UNIPORT Teaching Hospital
               </p>
             </div>

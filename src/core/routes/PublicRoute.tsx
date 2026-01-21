@@ -24,6 +24,7 @@ export const PublicRoute = () => {
         return <Navigate to="/hospital/dashboard" replace />;
       case "admin":
       case "regulatory":
+      case "regulatory_body":
         return <Navigate to="/regulation/dashboard" replace />;
       default:
         // If role is unknown/invalid, we shouldn't redirect to "/" which might redirect back here.

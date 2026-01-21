@@ -1,4 +1,4 @@
-export type UserRole = "blood_banks" | "donor" | "facilities" | "admin";
+export type UserRole = "blood_banks" | "donor" | "facilities" | "admin" | "regulatory_body";
 
 export interface BaseUser {
   id: number;
@@ -74,4 +74,39 @@ export interface Admin extends BaseUser {
     // Add specific fields if known, otherwise base user fields apply
 }
 
-export type User = BloodBank | Donor | Hospital | Admin;
+export interface RegulatoryBodyProfile {
+  id: number;
+  institution_name: string;
+  license_number: string;
+  level: string;
+  state_id: number;
+  email: string;
+  phone_number: string;
+  address: string;
+  notification_preferences: {
+      blood_stock_alerts: boolean;
+      fraud_detection: boolean;
+      emergency_requests: boolean;
+      event_participation: boolean;
+      donor_retention: boolean;
+      donor_feedback: boolean;
+      donation_drive: boolean;
+      emergency_notification: boolean;
+      new_donor_registrations: boolean;
+  };
+  is_active: boolean;
+  state?: {
+    id: number;
+    name: string;
+    code: string;
+    region: string;
+  };
+}
+
+export interface RegulatoryBody extends BaseUser {
+  role: "regulatory_body";
+  first_name: string; // The user object has first_name/last_name even if it's an organization name
+  regulatory_body: RegulatoryBodyProfile;
+}
+
+export type User = BloodBank | Donor | Hospital | Admin | RegulatoryBody;
