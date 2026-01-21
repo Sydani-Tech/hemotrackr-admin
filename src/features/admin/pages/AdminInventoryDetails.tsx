@@ -1,8 +1,7 @@
-import { useParams } from "react-router-dom";
-import { User, Droplet, ArrowRight } from "lucide-react";
+
+import { Droplet, User } from "lucide-react";
 
 const AdminInventoryDetails = () => {
-  const { id } = useParams();
 
   // Mock header info
   const facilityName = "BMH Hospital";

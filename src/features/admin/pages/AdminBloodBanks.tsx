@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { Search, Building2, Droplet } from "lucide-react";
+import { Droplet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AdminBloodBanks = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
 
   const stats = [
     {

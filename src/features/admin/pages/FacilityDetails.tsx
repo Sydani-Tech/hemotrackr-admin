@@ -1,9 +1,7 @@
-import { useParams } from "react-router-dom";
 import ReactECharts from "echarts-for-react";
-import { User, Droplet, Clock, ArrowRight } from "lucide-react";
+import { User, ArrowRight } from "lucide-react";
 
 const FacilityDetails = () => {
-  const { id } = useParams();
 
   // Mock data - in a real app, fetch based on ID
   const facilityName = "BMH Hospital";

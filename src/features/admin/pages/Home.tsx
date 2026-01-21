@@ -1,6 +1,6 @@
-import React from "react";
+
 import ReactECharts from "echarts-for-react";
-import { ArrowUp, ArrowDown, User, MoreHorizontal, Filter } from "lucide-react";
+import { ArrowUp, ArrowDown, User,  Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // --- Components ---

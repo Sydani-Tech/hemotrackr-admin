@@ -1,17 +1,8 @@
-import { useState } from "react";
-import {
-  Search,
-  MessageSquare,
-  MoreHorizontal,
-  User,
-  Activity,
-  Building2,
-} from "lucide-react";
+import { Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const HealthFacilities = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
 
   const stats = [
     {

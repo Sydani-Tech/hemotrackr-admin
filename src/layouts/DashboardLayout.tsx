@@ -6,8 +6,6 @@ import {
   Bell,
   Search,
   Calendar,
-  Plus,
-  Clock,
 } from "lucide-react";
 
 const DashboardLayout = () => {
