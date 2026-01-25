@@ -1,17 +1,58 @@
 import { useNavigate } from "react-router-dom";
-import {
-  ChevronLeft,
-} from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import RequestSuccess from "../components/RequestSuccess";
 import MedicalTestModal from "../components/MedicalTestModal";
+import { BloodBankAPI } from "@/core/services/BloodBankService";
 
 const MakeRequest = () => {
   const navigate = useNavigate();
   const [requestType, setRequestType] = useState("Blood");
+  const [requestSource, setRequestSource] = useState("donors");
+  const [bloodGroup, setBloodGroup] = useState("");
+  const [genotype, setGenotype] = useState("");
+  const [unitsNeeded, setUnitsNeeded] = useState("");
+  const [minUnits, setMinUnits] = useState("");
+  const [neededBy, setNeededBy] = useState("");
+  const [isEmergency, setIsEmergency] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    try {
+      const payload = {
+        type: requestType,
+        request_source: requestSource,
+        blood_group: requestType === "Blood" ? bloodGroup : null,
+        genotype: genotype || null,
+        units_needed: parseInt(unitsNeeded),
+        min_units_bank_can_send: minUnits ? parseInt(minUnits) : null,
+        needed_by: neededBy,
+        is_emergency: isEmergency,
+      };
+
+      await BloodBankAPI.createRequest(payload);
+      setIsConfirmOpen(false);
+      setIsSuccessOpen(true);
+    } catch (error: any) {
+      console.error("Failed to create request:", error);
+      alert(error.response?.data?.message || "Failed to create request. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getSourceLabel = (value: string) => {
+    switch (value) {
+      case "donors": return "Blood Donors";
+      case "blood_banks": return "Blood Banks";
+      case "both": return "Both Donors and Blood Banks";
+      default: return value;
+    }
+  };
 
   return (
     <div className="flex gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -46,11 +87,10 @@ const MakeRequest = () => {
                     key={type}
                     type="button"
                     onClick={() => setRequestType(type)}
-                    className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      requestType === type
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-200"
-                        : "bg-blue-100 text-blue-400 hover:bg-blue-200"
-                    }`}
+                    className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${requestType === type
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                      : "bg-blue-100 text-blue-400 hover:bg-blue-200"
+                      }`}
                   >
                     {type}
                   </button>
@@ -63,36 +103,56 @@ const MakeRequest = () => {
               <label className="text-xs font-bold text-gray-500 uppercase block mb-2">
                 Request Source
               </label>
-              <select className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20">
-                <option>Blood Bank</option>
-                <option>Hospital</option>
+              <select
+                value={requestSource}
+                onChange={(e) => setRequestSource(e.target.value)}
+                className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="donors">Donors</option>
+                <option value="blood_banks">Blood Banks</option>
+                <option value="both">Both Donors and Blood Banks</option>
               </select>
             </div>
 
             {/* Blood Group */}
-            <div>
-              <label className="text-xs font-bold text-gray-500 uppercase block mb-2">
-                Blood Group
-              </label>
-              <select className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20">
-                <option>Choose Blood Group</option>
-                <option>A+</option>
-                <option>A-</option>
-                <option>O+</option>
-                <option>O-</option>
-              </select>
-            </div>
+            {requestType === "Blood" && (
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase block mb-2">
+                  Blood Group
+                </label>
+                <select
+                  value={bloodGroup}
+                  onChange={(e) => setBloodGroup(e.target.value)}
+                  className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="">Choose Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
+            )}
 
             {/* Genotype */}
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase block mb-2">
                 Genotype
               </label>
-              <select className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20">
-                <option>Choose Genotype</option>
-                <option>AA</option>
-                <option>AS</option>
-                <option>SS</option>
+              <select
+                value={genotype}
+                onChange={(e) => setGenotype(e.target.value)}
+                className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="">Choose Genotype (Optional)</option>
+                <option value="AA">AA</option>
+                <option value="AS">AS</option>
+                <option value="SS">SS</option>
+                <option value="AC">AC</option>
               </select>
             </div>
 
@@ -103,6 +163,9 @@ const MakeRequest = () => {
               </label>
               <input
                 type="number"
+                min="1"
+                value={unitsNeeded}
+                onChange={(e) => setUnitsNeeded(e.target.value)}
                 className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
@@ -114,6 +177,9 @@ const MakeRequest = () => {
               </label>
               <input
                 type="number"
+                min="1"
+                value={minUnits}
+                onChange={(e) => setMinUnits(e.target.value)}
                 className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
@@ -125,6 +191,8 @@ const MakeRequest = () => {
               </label>
               <input
                 type="datetime-local"
+                value={neededBy}
+                onChange={(e) => setNeededBy(e.target.value)}
                 className="w-full bg-gray-100 border-none rounded-xl px-4 py-3 text-sm text-gray-600 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
@@ -133,6 +201,8 @@ const MakeRequest = () => {
               <input
                 type="checkbox"
                 id="emergency"
+                checked={isEmergency}
+                onChange={(e) => setIsEmergency(e.target.checked)}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
               />
               <label
@@ -146,7 +216,8 @@ const MakeRequest = () => {
             <button
               type="button"
               onClick={() => setIsConfirmOpen(true)}
-              className="w-32 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200"
+              disabled={!unitsNeeded || !neededBy || (requestType === "Blood" && !bloodGroup)}
+              className="w-32 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200"
             >
               Proceed
             </button>
@@ -155,7 +226,7 @@ const MakeRequest = () => {
       </div>
 
       {/* Right Sidebar - Ad & Share */}
-      <MedicalTestModal/>
+      <MedicalTestModal />
 
       {/* Confirmation Modal */}
       {isConfirmOpen && (
@@ -181,7 +252,7 @@ const MakeRequest = () => {
                   DETAILS
                 </span>
                 <span className="text-gray-500 font-medium text-xs uppercase">
-                  AMOUNT
+                  VALUE
                 </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-50">
@@ -197,44 +268,46 @@ const MakeRequest = () => {
                   Request Source
                 </span>
                 <span className="text-gray-900 font-bold text-sm text-right">
-                  Blood Donor
+                  {getSourceLabel(requestSource)}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                <span className="text-gray-600 font-medium text-sm">
-                  Blood group and Unit
-                </span>
-                <span className="text-gray-900 font-bold text-sm text-right">
-                  A- / 5 Units
-                </span>
-              </div>
+              {requestType === "Blood" && (
+                <div className="flex justify-between items-center py-2 border-b border-gray-50">
+                  <span className="text-gray-600 font-medium text-sm">
+                    Blood Group & Units
+                  </span>
+                  <span className="text-gray-900 font-bold text-sm text-right">
+                    {bloodGroup} / {unitsNeeded} Units
+                  </span>
+                </div>
+              )}
+              {requestType !== "Blood" && (
+                <div className="flex justify-between items-center py-2 border-b border-gray-50">
+                  <span className="text-gray-600 font-medium text-sm">
+                    Units Needed
+                  </span>
+                  <span className="text-gray-900 font-bold text-sm text-right">
+                    {unitsNeeded} Units
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between items-center py-2 border-b border-gray-50">
                 <span className="text-gray-600 font-medium text-sm">
                   Needed by
                 </span>
                 <span className="text-gray-900 font-bold text-sm text-right">
-                  10th Aug. 2024
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-gray-600 font-medium text-sm">
-                  Request by
-                </span>
-                <span className="text-gray-900 font-bold text-sm text-right">
-                  BMH Hospital
+                  {new Date(neededBy).toLocaleString()}
                 </span>
               </div>
             </div>
 
             <div className="space-y-3">
               <Button
-                onClick={() => {
-                  setIsConfirmOpen(false);
-                  setIsSuccessOpen(true);
-                }}
+                onClick={handleSubmit}
+                disabled={isLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 rounded-xl"
               >
-                Upload Request
+                {isLoading ? "creating..." : "Upload Request"}
               </Button>
               <button
                 onClick={() => setIsConfirmOpen(false)}
@@ -249,7 +322,10 @@ const MakeRequest = () => {
 
       <RequestSuccess
         isOpen={isSuccessOpen}
-        onClose={() => setIsSuccessOpen(false)}
+        onClose={() => {
+          setIsSuccessOpen(false);
+          navigate("/blood-bank/dashboard");
+        }}
       />
     </div>
   );

@@ -1,19 +1,89 @@
-import React from "react";
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ScheduleSuccessModal from "../components/ScheduleSuccessModal";
+import { DonorAPI } from "@/core/services/DonorService";
+import { authInstance } from "@/core/api/apiInstances";
+import { toast } from "react-toastify";
 
 const ScheduleDonation = () => {
   const navigate = useNavigate();
-  const [donationType, setDonationType] = React.useState<
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const requestId = searchParams.get('requestId');
+
+  const [request, setRequest] = useState<any | null>(null);
+  const [loadingRequest, setLoadingRequest] = useState(false);
+
+  const [donationType, setDonationType] = useState<
     "Blood" | "Platelets" | "Bone Marrow"
   >("Blood");
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
+  const [bloodGroup, setBloodGroup] = useState("");
+  const [genotype, setGenotype] = useState("");
+  const [gender, setGender] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
+  // Fetch request details if coming from a request
+  useEffect(() => {
+    if (requestId) {
+      fetchRequestDetails();
+    }
+  }, [requestId]);
+
+  const fetchRequestDetails = async () => {
+    setLoadingRequest(true);
+    try {
+      const response = await authInstance.get(`/user-requests/${requestId}`);
+      const requestData = response.data.blood_request || response.data;
+      setRequest(requestData);
+
+      // Pre-fill blood group and genotype from request
+      if (requestData.blood_group) setBloodGroup(requestData.blood_group);
+      if (requestData.genotype) setGenotype(requestData.genotype);
+    } catch (error) {
+      console.error("Failed to fetch request", error);
+      toast.error("Failed to load request details");
+    } finally {
+      setLoadingRequest(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate API call
-    setIsSuccessModalOpen(true);
+    setLoading(true);
+
+    try {
+      const notes = `Blood Group: ${bloodGroup}, Genotype: ${genotype}, Gender: ${gender}`;
+
+      const payload: any = {
+        organization_id: id,
+        appointment_date: date,
+        appointment_time: time,
+        donation_type: donationType === 'Blood' ? 'Whole Blood' : donationType,
+        type: 'Scheduled',
+        blood_group: bloodGroup,
+        genotype: genotype,
+        notes: notes.trim().replace(/^, /, '')
+      };
+
+      // Include request_id if scheduling from a request
+      if (requestId) {
+        payload.user_request_id = parseInt(requestId);
+      }
+
+      await DonorAPI.createAppointment(payload);
+
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      console.error("Failed to schedule", error);
+      alert("Failed to schedule appointment. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,11 +130,10 @@ const ScheduleDonation = () => {
                   key={type}
                   type="button"
                   onClick={() => setDonationType(type)}
-                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    donationType === type
-                      ? "bg-blue-600 text-white"
-                      : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                  }`}
+                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${donationType === type
+                    ? "bg-blue-600 text-white"
+                    : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                    }`}
                 >
                   {type}
                 </button>
@@ -75,15 +144,25 @@ const ScheduleDonation = () => {
           {/* Blood Group */}
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">
-              BLOOD GROUP
+              BLOOD GROUP {requestId && "(From Request)"}
             </label>
             <div className="relative">
-              <select className="w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
-                <option>Choose Blood Group</option>
-                <option>A+</option>
-                <option>A-</option>
-                <option>O+</option>
-                <option>O-</option>
+              <select
+                value={bloodGroup}
+                onChange={(e) => setBloodGroup(e.target.value)}
+                required
+                disabled={!!requestId}
+                className={`w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none ${requestId ? 'cursor-not-allowed opacity-60' : ''}`}
+              >
+                <option value="">Choose Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-blue-500">
                 <svg
@@ -106,14 +185,21 @@ const ScheduleDonation = () => {
           {/* Genotype */}
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">
-              GENOTYPE
+              GENOTYPE {requestId && "(From Request)"}
             </label>
             <div className="relative">
-              <select className="w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
-                <option>Choose Genotype</option>
-                <option>AA</option>
-                <option>AS</option>
-                <option>SS</option>
+              <select
+                value={genotype}
+                onChange={(e) => setGenotype(e.target.value)}
+                required
+                disabled={!!requestId}
+                className={`w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none ${requestId ? 'cursor-not-allowed opacity-60' : ''}`}
+              >
+                <option value="">Choose Genotype</option>
+                <option value="AA">AA</option>
+                <option value="AS">AS</option>
+                <option value="SS">SS</option>
+                <option value="AC">AC</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-blue-500">
                 <svg
@@ -139,10 +225,15 @@ const ScheduleDonation = () => {
               PATIENT GENDER
             </label>
             <div className="relative">
-              <select className="w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none">
-                <option>Select Gender</option>
-                <option>Male</option>
-                <option>Female</option>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                required
+                className="w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-blue-500">
                 <svg
@@ -170,6 +261,10 @@ const ScheduleDonation = () => {
             <div className="relative">
               <input
                 type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                min={new Date().toISOString().split("T")[0]}
                 className="w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
@@ -183,6 +278,9 @@ const ScheduleDonation = () => {
             <div className="relative">
               <input
                 type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                required
                 className="w-full bg-gray-100 border-none rounded-xl px-4 py-3.5 text-gray-500 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
@@ -190,9 +288,10 @@ const ScheduleDonation = () => {
 
           <button
             type="submit"
-            className="bg-blue-600 text-white w-32 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md"
+            disabled={loading}
+            className="bg-blue-600 text-white w-32 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center"
           >
-            Schedule
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Schedule"}
           </button>
         </form>
       </div>

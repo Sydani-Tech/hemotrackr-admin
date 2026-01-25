@@ -1,41 +1,75 @@
-import { Link } from "react-router-dom";
-import { MessageCircle, Star, ExternalLink } from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { MessageCircle, Star, ExternalLink, Loader2, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { DonorAPI } from "@/core/services/DonorService";
 
 const BloodBankDetails = () => {
-  // const { id } = useParams(); // Unused for now as we mock data
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [facility, setFacility] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isCheckInSuccess, setIsCheckInSuccess] = useState(false);
 
-  // Mock data based on UI
-  const facility = {
-    name: "BMH Hospital",
-    type: "Blood Bank",
-    address: "No 23 Herbert street, Oko Jumbo Avenue, Lekki Phase 3, Lagos.",
-    reviewsCount: 23,
-    rating: 96,
-    ratingCount: 23,
-    unitsAvailable: "A-",
-    stockStatus: "Out of stock",
+  useEffect(() => {
+    if (id) {
+      fetchDetails();
+    }
+  }, [id]);
+
+  const fetchDetails = async () => {
+    try {
+      const response = await DonorAPI.getBloodBankDetails(id!);
+      setFacility(response.data.organization);
+    } catch (error) {
+      console.error("Failed to fetch facility details", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleMessage = () => {
+    navigate("/donor/messages");
+  };
+
+  const handleCheckIn = async () => {
+    try {
+      const now = new Date();
+      await DonorAPI.createAppointment({
+        organization_id: id,
+        appointment_date: now.toISOString().split("T")[0],
+        appointment_time: now.toTimeString().slice(0, 5),
+        type: "Walk-in",
+        donation_type: "Whole Blood",
+        notes: "Walk-in Check-in",
+      });
+      setIsCheckInSuccess(true);
+    } catch (error: any) {
+      console.error("Failed to check in", error);
+      const message = error.response?.data?.message || "Failed to check in. Please try again.";
+      alert(message);
+    }
+  };
+
+  const getImageUrl = (path: string | null) => {
+    if (!path) return "https://placehold.co/100x100/png?text=BB";
+    if (path.startsWith("http")) return path;
+    return `http://localhost:8000${path.startsWith("/") ? "" : "/"}${path}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!facility) {
+    return <div className="text-center py-10">Blood Banks not found.</div>;
+  }
+
+  // Mock reviews for now as backend doesn't seem to have them yet
   const reviews = [
-    {
-      user: "Offshore User",
-      date: "9-10-24, 12:00pm",
-      rating: 4,
-      text: "Donation process was easy and fast. Staff members were kind.",
-    },
-    {
-      user: "Offshore User",
-      date: "9-10-24, 12:00pm",
-      rating: 4,
-      text: "Donation process was easy and fast. Staff members were kind.",
-    },
-    // Duplicate for UI effect
-    {
-      user: "Offshore User",
-      date: "9-10-24, 12:00pm",
-      rating: 4,
-      text: "Donation process was easy and fast. Staff members were kind.",
-    },
     {
       user: "Offshore User",
       date: "9-10-24, 12:00pm",
@@ -45,7 +79,7 @@ const BloodBankDetails = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Breadcrumbs */}
       <div className="flex items-center text-sm text-gray-500">
         <Link
@@ -70,11 +104,10 @@ const BloodBankDetails = () => {
         <div>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200">
-              {/* Map thumbnail placeholder */}
               <img
-                src="https://placehold.co/100x100/png?text=Map"
+                src={getImageUrl(facility.logo)}
                 className="w-full h-full object-cover"
-                alt="Map"
+                alt="Logo"
               />
             </div>
             <div>
@@ -87,13 +120,23 @@ const BloodBankDetails = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 px-6 py-2.5 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors">
+          <button
+            onClick={handleMessage}
+            className="flex items-center gap-2 px-4 py-2.5 border border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+          >
             <MessageCircle className="w-4 h-4" />
             Message
           </button>
+          <button
+            onClick={handleCheckIn}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
+          >
+            <Check className="w-4 h-4" />
+            Check In
+          </button>
           <Link
             to="schedule"
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
           >
             <div className="w-4 h-4 rounded-full bg-white text-blue-600 flex items-center justify-center text-xs">
               ✓
@@ -110,11 +153,11 @@ const BloodBankDetails = () => {
           <p className="text-xs text-gray-400">Reviews</p>
         </div>
         <div className="text-center">
-          <p className="font-bold text-gray-900">{facility.reviewsCount}</p>
+          <p className="font-bold text-gray-900">{reviews.length}</p>
           <p className="text-xs text-gray-400">Reviews</p>
         </div>
         <div className="text-center">
-          <p className="font-bold text-gray-900">{facility.rating}%</p>
+          <p className="font-bold text-gray-900">4.5</p>
           <p className="text-xs text-gray-400">Rating</p>
         </div>
       </div>
@@ -145,7 +188,9 @@ const BloodBankDetails = () => {
               {facility.address}
             </p>
             <a
-              href="#"
+              href={`https://maps.google.com/?q=${facility.latitude},${facility.longitude}`}
+              target="_blank"
+              rel="noreferrer"
               className="text-xs text-orange-400 flex items-center gap-1 mt-2 hover:underline"
             >
               Open in Google Map <ExternalLink className="w-3 h-3" />
@@ -155,16 +200,22 @@ const BloodBankDetails = () => {
 
         {/* Stats Cards */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col justify-center items-center">
-          <h3 className="text-2xl font-bold text-blue-600">A-</h3>
-          <p className="text-xs text-gray-500">10 Units</p>
+          <h3 className="text-2xl font-bold text-blue-600">
+            {facility.inventory_items ? facility.inventory_items.reduce((acc: number, item: any) => acc + item.units_in_stock, 0) : 0}
+          </h3>
+          <p className="text-xs text-gray-500">Units Available</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col justify-center items-center">
-          <h3 className="text-2xl font-bold text-blue-600">A+</h3>
-          <p className="text-xs text-gray-500">Out of stock</p>
+          <h3 className="text-base font-bold text-blue-600 text-center">
+            {typeof facility.operating_hours === 'object' && facility.operating_hours
+              ? "Mon-Fri: 9AM-5PM"
+              : facility.operating_hours || "9AM - 5PM"}
+          </h3>
+          <p className="text-xs text-gray-500">Operating Hours</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-col justify-center items-center">
           <h3 className="text-2xl font-bold text-blue-600">
-            {facility.reviewsCount}
+            {reviews.length}
           </h3>
           <p className="text-xs text-gray-500">Reviews</p>
         </div>
@@ -195,9 +246,8 @@ const BloodBankDetails = () => {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
-                          i < review.rating ? "fill-current" : "text-gray-200"
-                        }`}
+                        className={`w-4 h-4 ${i < review.rating ? "fill-current" : "text-gray-200"
+                          }`}
                       />
                     ))}
                   </div>
@@ -216,6 +266,32 @@ const BloodBankDetails = () => {
           </button>
         </div>
       </div>
+
+      {isCheckInSuccess && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm"
+          onClick={() => setIsCheckInSuccess(false)}
+        >
+          <div
+            className="bg-white rounded-3xl p-8 w-full max-w-sm flex flex-col items-center text-center shadow-2xl animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-200 mb-6">
+              <Check className="w-8 h-8 text-white stroke-[3px]" />
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Done!</h2>
+            <p className="text-gray-500 text-sm mb-8 font-medium">Checked In</p>
+
+            <button
+              onClick={() => navigate("/donor/dashboard")}
+              className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+            >
+              Back to Menu
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

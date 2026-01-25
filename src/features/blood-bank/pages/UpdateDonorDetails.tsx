@@ -1,10 +1,81 @@
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User, Loader2 } from "lucide-react";
 import MedicalTestModal from "../components/MedicalTestModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { BloodBankAPI } from "@/core/services/BloodBankService";
 
 export default function UpdateDonorDetails() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const [donor, setDonor] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    genotype: "",
+    blood_group: "",
+    height: "",
+    platelets_type: "",
+  });
+
+  useEffect(() => {
+    if (id) {
+      fetchDonor();
+    }
+  }, [id]);
+
+  const fetchDonor = async () => {
+    try {
+      const response = await BloodBankAPI.getDonor(id!);
+      const donorData = response.data.donor;
+      setDonor(donorData);
+
+      // Pre-fill form with existing data
+      setFormData({
+        genotype: donorData.genotype || "",
+        blood_group: donorData.blood_group || "",
+        height: donorData.height || "",
+        platelets_type: donorData.platelets_type || "",
+      });
+    } catch (error) {
+      console.error("Failed to fetch donor", error);
+      alert("Failed to load donor details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      await BloodBankAPI.updateDonorHealth(id!, formData);
+      alert("Donor health info updated successfully!");
+      navigate(-1);
+    } catch (error) {
+      console.error("Failed to update donor", error);
+      alert("Failed to update donor. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (!donor) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-gray-500">Donor not found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -29,27 +100,32 @@ export default function UpdateDonorDetails() {
               <User className="w-6 h-6 fill-current" />
             </div>
             <div>
-              <h3 className="font-bold text-gray-900">Abayomi Ayodele</h3>
+              <h3 className="font-bold text-gray-900">
+                {donor.first_name} {donor.last_name}
+              </h3>
               <p className="text-sm text-gray-500">
-                From BHM - HSG Hospital 18:16:1
+                {donor.email || donor.phone || "No contact info"}
               </p>
             </div>
           </div>
 
           {/* Form */}
-          <div className="space-y-6 max-w-2xl">
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wide text-gray-900 block">
                 Genotype
               </label>
               <div className="relative">
-                <select className="w-full bg-white border border-gray-100 h-12 rounded-lg px-4 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                  <option value="" disabled selected>
-                    Choose Genotype
-                  </option>
+                <select
+                  value={formData.genotype}
+                  onChange={(e) => setFormData({ ...formData, genotype: e.target.value })}
+                  className="w-full bg-white border border-gray-100 h-12 rounded-lg px-4 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">Choose Genotype</option>
                   <option value="AA">AA</option>
                   <option value="AS">AS</option>
                   <option value="SS">SS</option>
+                  <option value="AC">AC</option>
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                   <svg
@@ -74,14 +150,20 @@ export default function UpdateDonorDetails() {
                 Blood Group
               </label>
               <div className="relative">
-                <select className="w-full bg-white border border-gray-100 h-12 rounded-lg px-4 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                  <option value="" disabled selected>
-                    Choose Blood Group
-                  </option>
+                <select
+                  value={formData.blood_group}
+                  onChange={(e) => setFormData({ ...formData, blood_group: e.target.value })}
+                  className="w-full bg-white border border-gray-100 h-12 rounded-lg px-4 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">Choose Blood Group</option>
                   <option value="A+">A+</option>
-                  <option value="O+">O+</option>
+                  <option value="A-">A-</option>
                   <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
                   <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                   <svg
@@ -106,6 +188,9 @@ export default function UpdateDonorDetails() {
                 Height
               </label>
               <input
+                type="text"
+                value={formData.height}
+                onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                 placeholder="177cm"
                 className="w-full bg-white border border-gray-100 h-12 rounded-lg px-4 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
               />
@@ -116,17 +201,24 @@ export default function UpdateDonorDetails() {
                 Platelets Type
               </label>
               <input
+                type="text"
+                value={formData.platelets_type}
+                onChange={(e) => setFormData({ ...formData, platelets_type: e.target.value })}
                 placeholder="Type"
                 className="w-full bg-white border border-gray-100 h-12 rounded-lg px-4 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
               />
             </div>
 
             <div className="pt-4">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-lg font-semibold">
-                Save
+              <Button
+                type="submit"
+                disabled={saving}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-lg font-semibold disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save"}
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
 

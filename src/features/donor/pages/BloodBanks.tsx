@@ -1,68 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { List, Map as MapIcon, Plus } from "lucide-react";
+import { List, Map as MapIcon, Plus, Loader2 } from "lucide-react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { DonorAPI } from "@/core/services/DonorService";
 
 // --- Types ---
 interface BloodBank {
   id: string;
   name: string;
   address: string;
-  isNewRequest?: boolean;
-  requestDate?: string;
-  lat: number;
-  lng: number;
+  phone?: string;
+  latitude: number;
+  longitude: number;
 }
-
-const MOCK_BLOOD_BANKS: BloodBank[] = [
-  {
-    id: "1",
-    name: "Uniport Teaching Hospital",
-    address:
-      "123, House Number, Name of Street, Maryland, Owo, Abuja, Federal Capital Territory, Nigeria",
-    lat: 4.9057, // Example coords near Port Harcourt
-    lng: 6.9189,
-  },
-  {
-    id: "2",
-    name: "BMH Hospital",
-    address: "You have a new donor request from Uniport teaching hospital",
-    isNewRequest: true,
-    requestDate: "Tuesday, June 14, 2024 18:16:1",
-    lat: 4.7714,
-    lng: 7.0069,
-  },
-  {
-    id: "3",
-    name: "Uniport Teaching Hospital",
-    address:
-      "123, House Number, Name of Street, Maryland, Owo, Abuja, Federal Capital Territory, Nigeria",
-    lat: 4.8156,
-    lng: 7.0498,
-  },
-  {
-    id: "4",
-    name: "BMH Hospital",
-    address: "You have a new donor request from Uniport teaching hospital",
-    isNewRequest: true,
-    requestDate: "Tuesday, June 14, 2024 18:16:1",
-    lat: 4.8472,
-    lng: 6.9746,
-  },
-  {
-    id: "5",
-    name: "Uniport Teaching Hospital",
-    address:
-      "123, House Number, Name of Street, Maryland, Owo, Abuja, Federal Capital Territory, Nigeria",
-    lat: 4.8242,
-    lng: 7.0336,
-  },
-];
 
 // --- Components ---
 
 const BloodBankList = ({ data }: { data: BloodBank[] }) => {
+  if (data.length === 0) {
+    return <div className="text-center text-gray-400 py-10">No blood banks found.</div>;
+  }
   return (
     <div className="space-y-4">
       {data.map((item) => (
@@ -80,8 +38,8 @@ const BloodBankList = ({ data }: { data: BloodBank[] }) => {
               <p className="text-gray-400 text-sm leading-relaxed">
                 {item.address}
               </p>
-              {item.requestDate && (
-                <p className="text-gray-400 text-xs mt-2">{item.requestDate}</p>
+              {item.phone && (
+                <p className="text-gray-400 text-xs mt-2">Tel: {item.phone}</p>
               )}
             </div>
           </div>
@@ -98,6 +56,15 @@ const BloodBankMap = ({ data }: { data: BloodBank[] }) => {
   React.useEffect(() => {
     if (map.current) return; // initialize map only once
     if (!mapContainer.current) return;
+
+    // Default center (can be adjusted or set to user location)
+    const defaultCenter: [number, number] = [7.49508, 9.05785]; // Abuja approx
+
+    // Determine center based on data if available
+    let center = defaultCenter;
+    if (data.length > 0 && data[0].longitude && data[0].latitude) {
+      center = [data[0].longitude, data[0].latitude];
+    }
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -124,8 +91,8 @@ const BloodBankMap = ({ data }: { data: BloodBank[] }) => {
           },
         ],
       },
-      center: [7.0, 4.8],
-      zoom: 9,
+      center: center,
+      zoom: 6,
     });
 
     // Add zoom controls
@@ -133,6 +100,8 @@ const BloodBankMap = ({ data }: { data: BloodBank[] }) => {
 
     // Add markers
     data.forEach((loc) => {
+      if (!loc.latitude || !loc.longitude) return;
+
       // Create a DOM element for each marker.
       const el = document.createElement("div");
       el.className = "marker";
@@ -146,19 +115,18 @@ const BloodBankMap = ({ data }: { data: BloodBank[] }) => {
       // Create Popup
       const popup = new maplibregl.Popup({ offset: 25 }).setHTML(
         `<div style="font-family: sans-serif; padding: 5px;">
-           <h3 style="font-weight: bold; margin-bottom: 5px; color: #1f2937;">${
-             loc.name
-           }</h3>
+           <h3 style="font-weight: bold; margin-bottom: 5px; color: #1f2937;">${loc.name
+        }</h3>
            <p style="font-size: 12px; color: #6b7280;">${loc.address.substring(
-             0,
-             50
-           )}...</p>
+          0,
+          50
+        )}...</p>
          </div>`
       );
 
       // Add marker to map
       new maplibregl.Marker({ element: el })
-        .setLngLat([loc.lng, loc.lat])
+        .setLngLat([loc.longitude, loc.latitude])
         .setPopup(popup)
         .addTo(map.current!);
     });
@@ -186,6 +154,23 @@ const BloodBankMap = ({ data }: { data: BloodBank[] }) => {
 
 const BloodBanks = () => {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [bloodBanks, setBloodBanks] = useState<BloodBank[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBloodBanks();
+  }, []);
+
+  const fetchBloodBanks = async () => {
+    try {
+      const response = await DonorAPI.getBloodBanks();
+      setBloodBanks(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch blood banks", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -197,22 +182,20 @@ const BloodBanks = () => {
         <div className="flex bg-gray-100 p-1 rounded-xl">
           <button
             onClick={() => setViewMode("list")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
-              viewMode === "list"
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === "list"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-900"
-            }`}
+              }`}
           >
             <List className="w-4 h-4" />
             List View
           </button>
           <button
             onClick={() => setViewMode("map")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${
-              viewMode === "map"
+            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === "map"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-900"
-            }`}
+              }`}
           >
             <MapIcon className="w-4 h-4" />
             Map View
@@ -221,10 +204,14 @@ const BloodBanks = () => {
       </div>
 
       <div className="min-h-[500px]">
-        {viewMode === "list" ? (
-          <BloodBankList data={MOCK_BLOOD_BANKS} />
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          </div>
+        ) : viewMode === "list" ? (
+          <BloodBankList data={bloodBanks} />
         ) : (
-          <BloodBankMap data={MOCK_BLOOD_BANKS} />
+          <BloodBankMap data={bloodBanks} />
         )}
       </div>
     </div>

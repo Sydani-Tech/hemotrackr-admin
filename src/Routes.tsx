@@ -36,6 +36,8 @@ import TrackRequests from "./features/blood-bank/pages/TrackRequests";
 import FeebackPage from "./features/blood-bank/pages/FeebackPage";
 import UpdateDonor from "./features/blood-bank/pages/UpdateDonor";
 import UpdateDonorDetails from "./features/blood-bank/pages/UpdateDonorDetails";
+import AppointmentHistory from "./features/blood-bank/pages/AppointmentHistory";
+import AllRequests from "./features/blood-bank/pages/AllRequests";
 import InventoryPage from "./features/blood-bank/pages/InventoryPage";
 import BloodBankProfile from "./features/blood-bank/pages/Profile";
 import HospitalRequests from "./features/blood-bank/pages/hospital-requests/HospitalRequests";
@@ -129,6 +131,14 @@ const router = createBrowserRouter([
                 path: "blood-banks/:id/schedule",
                 element: <ScheduleDonation />,
               },
+              {
+                path: "appointments/create/:id",
+                element: <ScheduleDonation />,
+              },
+              {
+                path: "donations",
+                element: <DonationHistory />,
+              },
               { path: "feedback", element: <Feedback /> },
               {
                 path: "profile",
@@ -173,6 +183,8 @@ const router = createBrowserRouter([
               { path: "feedback", element: <FeebackPage /> },
               { path: "update-donor", element: <UpdateDonor /> },
               { path: "update-donor/:id", element: <UpdateDonorDetails /> },
+              { path: "appointment-history", element: <AppointmentHistory /> },
+              { path: "all-requests", element: <AllRequests /> },
               { path: "inventory", element: <InventoryPage /> },
               { path: "profile", element: <BloodBankProfile /> },
               { path: "hospital-requests", element: <HospitalRequests /> },
