@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Search, Filter } from "lucide-react";
+import { ArrowLeft, Loader2, Search, Filter, DollarSign } from "lucide-react";
 import { BloodBankAPI } from "@/core/services/BloodBankService";
+import { authInstance } from "@/core/api/apiInstances";
+import MakeOfferModal from "../components/MakeOfferModal";
 
 const AllRequests = () => {
     const navigate = useNavigate();
@@ -9,6 +11,8 @@ const AllRequests = () => {
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [offerStates, setOfferStates] = useState<Record<number, { hasOffer: boolean; offer: any; loading: boolean }>>({});
+    const [makeOfferModal, setMakeOfferModal] = useState<{ isOpen: boolean; requestId: number | null; requestDetails: any }>({ isOpen: false, requestId: null, requestDetails: null });
 
     useEffect(() => {
         fetchRequests();
@@ -35,6 +39,52 @@ const AllRequests = () => {
             console.error("Failed to accept request", error);
             alert("Failed to accept request.");
         }
+    };
+
+    const checkOfferStatus = async (requestId: number) => {
+        setOfferStates(prev => ({ ...prev, [requestId]: { hasOffer: false, offer: null, loading: true } }));
+        try {
+            const response = await authInstance.get(`/blood-bank/blood-requests/${requestId}/check-offer`);
+            setOfferStates(prev => ({
+                ...prev,
+                [requestId]: {
+                    hasOffer: response.data.has_offer,
+                    offer: response.data.offer,
+                    loading: false
+                }
+            }));
+        } catch (error) {
+            console.error("Failed to check offer status", error);
+            setOfferStates(prev => ({ ...prev, [requestId]: { hasOffer: false, offer: null, loading: false } }));
+        }
+    };
+
+    // Check offer status for all pending requests
+    useEffect(() => {
+        requests.forEach(request => {
+            if (request.status === "Pending" && !offerStates[request.id]) {
+                checkOfferStatus(request.id);
+            }
+        });
+    }, [requests]);
+
+    const handleMakeOffer = (request: any) => {
+        setMakeOfferModal({
+            isOpen: true,
+            requestId: request.id,
+            requestDetails: {
+                bloodGroup: request.blood_group,
+                unitsNeeded: request.units_needed || request.units_requested,
+                organizationName: request.organization?.name || "Unknown"
+            }
+        });
+    };
+
+    const handleOfferSuccess = () => {
+        if (makeOfferModal.requestId) {
+            checkOfferStatus(makeOfferModal.requestId);
+        }
+        fetchRequests();
     };
 
     const filteredRequests = requests.filter((request) => {
@@ -188,15 +238,30 @@ const AllRequests = () => {
 
                                 {request.status === "Pending" && (
                                     <div className="flex gap-3 pt-4 border-t border-gray-100">
-                                        <button
-                                            onClick={() => handleAccept(request.id)}
-                                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold text-sm transition-colors"
-                                        >
-                                            Accept Request
-                                        </button>
-                                        <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-semibold text-sm transition-colors">
-                                            Decline
-                                        </button>
+                                        {offerStates[request.id]?.loading ? (
+                                            <div className="flex-1 flex items-center justify-center py-2">
+                                                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                                                <span className="ml-2 text-sm text-gray-500">Checking offer status...</span>
+                                            </div>
+                                        ) : offerStates[request.id]?.hasOffer ? (
+                                            <div className="flex-1 bg-green-50 border border-green-200 rounded-lg p-3">
+                                                <p className="text-green-700 font-semibold text-sm">✓ Offer Submitted</p>
+                                                <p className="text-green-600 text-xs mt-1">
+                                                    Total: ₦{offerStates[request.id]?.offer?.total_amount?.toLocaleString() || "N/A"}
+                                                </p>
+                                                <p className="text-gray-500 text-xs mt-1">
+                                                    Status: {offerStates[request.id]?.offer?.status}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleMakeOffer(request)}
+                                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <DollarSign className="w-4 h-4" />
+                                                Make an Offer
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -208,6 +273,14 @@ const AllRequests = () => {
                     </div>
                 )}
             </div>
+
+            <MakeOfferModal
+                isOpen={makeOfferModal.isOpen}
+                onClose={() => setMakeOfferModal({ isOpen: false, requestId: null, requestDetails: null })}
+                requestId={makeOfferModal.requestId!}
+                requestDetails={makeOfferModal.requestDetails}
+                onSuccess={handleOfferSuccess}
+            />
         </div>
     );
 };

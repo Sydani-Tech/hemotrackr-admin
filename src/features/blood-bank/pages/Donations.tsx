@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Loader2, History } from "lucide-react";
+import { ChevronLeft, Loader2, History, CheckCircle2 } from "lucide-react";
 import ScheduleSuccessModal from "../components/ScheduleSuccessModal";
 import RejectionDialog from "../components/RejectionDialog";
+import RecordDonationModal from "../components/RecordDonationModal";
 import { useEffect, useState } from "react";
 import { BloodBankAPI as BloodBankService } from "@/core/services/BloodBankService";
 
@@ -13,11 +14,21 @@ const Donations = () => {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<AppointmentStatus>("Scheduled");
+
+  // Rejection Dialog State
   const [rejectionDialog, setRejectionDialog] = useState<{
     isOpen: boolean;
     appointmentId: number | null;
     donorName: string;
   }>({ isOpen: false, appointmentId: null, donorName: "" });
+
+  // Record Donation Modal State
+  const [recordDonationModal, setRecordDonationModal] = useState<{
+    isOpen: boolean;
+    appointment: any | null;
+  }>({ isOpen: false, appointment: null });
+
+  const [loadingStates, setLoadingStates] = useState<Record<number, 'accepting' | 'rejecting' | null>>({});
 
   useEffect(() => {
     fetchAppointments();
@@ -39,6 +50,7 @@ const Donations = () => {
   };
 
   const handleAccept = async (id: number) => {
+    setLoadingStates(prev => ({ ...prev, [id]: 'accepting' }));
     try {
       await BloodBankService.updateAppointmentStatus(id, "Confirmed");
       fetchAppointments();
@@ -46,6 +58,8 @@ const Donations = () => {
     } catch (error: any) {
       console.error("Failed to confirm appointment", error);
       alert(error?.response?.data?.message || "Action failed. Please try again.");
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [id]: null }));
     }
   };
 
@@ -57,12 +71,22 @@ const Donations = () => {
     });
   };
 
+  const handleOpenRecordDonation = (appointment: any) => {
+    setRecordDonationModal({
+      isOpen: true,
+      appointment: appointment,
+    });
+  };
+
   const handleRejectConfirm = async (reason: string) => {
     if (!rejectionDialog.appointmentId) return;
 
+    const appointmentId = rejectionDialog.appointmentId;
+    setLoadingStates(prev => ({ ...prev, [appointmentId]: 'rejecting' }));
+
     try {
       await BloodBankService.updateAppointmentStatus(
-        rejectionDialog.appointmentId,
+        appointmentId,
         "Cancelled",
         reason
       );
@@ -71,6 +95,8 @@ const Donations = () => {
     } catch (error: any) {
       console.error("Failed to reject appointment", error);
       alert(error?.response?.data?.message || "Action failed. Please try again.");
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [appointmentId]: null }));
     }
   };
 
@@ -111,6 +137,7 @@ const Donations = () => {
               day: "numeric",
               month: "short",
               year: "numeric",
+              // formatted date
             })}, {appointment.appointment_time?.slice(0, 5) || "N/A"}
           </p>
         </div>
@@ -121,19 +148,39 @@ const Donations = () => {
         {activeTab === "Scheduled" && (
           <>
             <button
-              className="bg-blue-100 text-blue-600 hover:bg-blue-200 px-8 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+              className="bg-blue-100 text-blue-600 hover:bg-blue-200 px-8 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               onClick={() => handleAccept(appointment.id)}
+              disabled={!!loadingStates[appointment.id]}
             >
-              Accept
+              {loadingStates[appointment.id] === 'accepting' && (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+              {loadingStates[appointment.id] === 'accepting' ? 'Accepting...' : 'Accept'}
             </button>
             <button
-              className="bg-red-100 text-red-600 hover:bg-red-200 px-8 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+              className="bg-red-100 text-red-600 hover:bg-red-200 px-8 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               onClick={() => handleRejectClick(appointment)}
+              disabled={!!loadingStates[appointment.id]}
             >
-              Reject
+              {loadingStates[appointment.id] === 'rejecting' && (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+              {loadingStates[appointment.id] === 'rejecting' ? 'Rejecting...' : 'Reject'}
             </button>
           </>
         )}
+
+        {/* Record Donation Button for Confirmed Appointments */}
+        {activeTab === "Confirmed" && (
+          <button
+            className="bg-green-600 text-white hover:bg-green-700 px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm shadow-green-200"
+            onClick={() => handleOpenRecordDonation(appointment)}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Record Donation
+          </button>
+        )}
+
         <button
           className="bg-green-100 text-green-700 hover:bg-green-200 px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors"
           onClick={() => navigate(`/blood-bank/update-donor/${appointment.donor?.id}`)}
@@ -256,6 +303,17 @@ const Donations = () => {
         }
         onConfirm={handleRejectConfirm}
         donorName={rejectionDialog.donorName}
+      />
+
+      <RecordDonationModal
+        isOpen={recordDonationModal.isOpen}
+        onClose={() => setRecordDonationModal({ isOpen: false, appointment: null })}
+        appointment={recordDonationModal.appointment}
+        onSuccess={() => {
+          fetchAppointments();
+          // Optionally switch to Completed tab
+          // setActiveTab("Completed");
+        }}
       />
     </div>
   );

@@ -39,19 +39,26 @@ import UpdateDonorDetails from "./features/blood-bank/pages/UpdateDonorDetails";
 import AppointmentHistory from "./features/blood-bank/pages/AppointmentHistory";
 import AllRequests from "./features/blood-bank/pages/AllRequests";
 import InventoryPage from "./features/blood-bank/pages/InventoryPage";
+import AnalyticsDashboard from "./features/blood-bank/pages/AnalyticsDashboard";
+import QualityControlPage from "./features/blood-bank/pages/QualityControlPage";
 import BloodBankProfile from "./features/blood-bank/pages/Profile";
 import HospitalRequests from "./features/blood-bank/pages/hospital-requests/HospitalRequests";
 import Riders from "./features/blood-bank/pages/hospital-requests/Riders";
+import Notifications from "./features/blood-bank/pages/Notifications";
+import BloodBankSettings from "./features/blood-bank/pages/Settings";
 
 // Hospital Imports
 import HospitalLayout from "./features/hospital/layouts/DashboardLayout";
 import HospitalHome from "./features/hospital/pages/Home";
+import HospitalMakeRequest from "./features/hospital/pages/MakeRequest";
 import HospitalRequestsPage from "./features/hospital/pages/Requests";
+import HospitalInventoryPage from "./features/hospital/pages/InventoryPage";
 import HospitalFeedback from "./features/hospital/pages/Feedback";
 import HospitalProfile from "./features/hospital/pages/Profile";
 import HospitalSupport from "./features/hospital/pages/AccountSupport";
 import HospitalMessages from "./features/hospital/pages/Messages";
 import HospitalDonations from "./features/hospital/pages/Donations";
+import HospitalRequestsFromOthers from "./features/hospital/pages/hospital-requests/HospitalRequests";
 import HospitalProfileLayout from "./features/hospital/components/ProfileLayout";
 import RegulatoryBodyLayout from "./features/reulatory-body/layouts/RegulatoryBodyLayout";
 import RegulatoryBodyHome from "./features/reulatory-body/pages/RegulatoryBodyHome";
@@ -136,6 +143,10 @@ const router = createBrowserRouter([
                 element: <ScheduleDonation />,
               },
               {
+                path: "appointments/create",
+                element: <Navigate to="/donor/blood-banks" replace />,
+              },
+              {
                 path: "donations",
                 element: <DonationHistory />,
               },
@@ -186,10 +197,14 @@ const router = createBrowserRouter([
               { path: "appointment-history", element: <AppointmentHistory /> },
               { path: "all-requests", element: <AllRequests /> },
               { path: "inventory", element: <InventoryPage /> },
+              { path: "analytics", element: <AnalyticsDashboard /> },
+              { path: "quality-control", element: <QualityControlPage /> },
               { path: "profile", element: <BloodBankProfile /> },
               { path: "hospital-requests", element: <HospitalRequests /> },
               { path: "hospital-requests/riders", element: <Riders /> },
               { path: "riders", element: <Riders /> },
+              { path: "notifications", element: <Notifications /> },
+              { path: "settings", element: <BloodBankSettings /> },
               {
                 path: "*",
                 element: <div className="p-4">Page under construction</div>,
@@ -211,7 +226,10 @@ const router = createBrowserRouter([
                 element: <HospitalHome />,
                 // loader: hospitalDashboardLoader,
               },
+              { path: "make-request", element: <HospitalMakeRequest /> },
               { path: "requests", element: <HospitalRequestsPage /> },
+              { path: "hospital-requests", element: <HospitalRequestsFromOthers /> },
+              { path: "inventory", element: <HospitalInventoryPage /> },
               { path: "donations", element: <HospitalDonations /> },
               { path: "messages", element: <HospitalMessages /> },
               { path: "feedback", element: <HospitalFeedback /> },

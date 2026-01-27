@@ -8,6 +8,9 @@ import {
   User,
   Settings,
   LogOut,
+  Package,
+  BarChart3,
+  ClipboardCheck,
 } from "lucide-react";
 
 export const bloodBankRoutes = [
@@ -25,6 +28,21 @@ export const bloodBankRoutes = [
     name: "Donations",
     path: "/blood-bank/donations",
     icon: Droplets,
+  },
+  {
+    name: "Inventory",
+    path: "/blood-bank/inventory",
+    icon: Package,
+  },
+  {
+    name: "Analytics",
+    path: "/blood-bank/analytics",
+    icon: BarChart3,
+  },
+  {
+    name: "Quality Control",
+    path: "/blood-bank/quality-control",
+    icon: ClipboardCheck,
   },
   {
     name: "Messages",

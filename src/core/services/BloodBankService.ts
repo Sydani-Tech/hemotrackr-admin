@@ -87,6 +87,18 @@ export class BloodBankAPI {
     return authInstance.get("/notifications", { params });
   }
 
+  static async markNotificationAsRead(id: string | number) {
+    return authInstance.post(`/notifications/${id}/mark-read`);
+  }
+
+  static async markAllNotificationsAsRead() {
+    return authInstance.post("/notifications/mark-all-read");
+  }
+
+  static async deleteNotification(id: string | number) {
+    return authInstance.delete(`/notifications/${id}`);
+  }
+
   static async getUnreadMessagesCount() {
     return authInstance.get("/messages/unread-count");
   }
@@ -101,5 +113,17 @@ export class BloodBankAPI {
 
   static async getRequests(params?: any) {
     return authInstance.get("/blood-bank/requests", { params });
+  }
+
+  static async recordDonation(appointmentId: string | number, data: any) {
+    return authInstance.post(`/blood-bank/appointments/${appointmentId}/record-donation`, data);
+  }
+
+  static async getSettings() {
+    return authInstance.get("/blood-bank/settings");
+  }
+
+  static async updateSettings(data: any) {
+    return authInstance.put("/blood-bank/settings", data);
   }
 }

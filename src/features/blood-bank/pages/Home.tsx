@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import MedicalTestModal from "../components/MedicalTestModal";
 
-// import blood from "../../assets/icons/blood.svg";
-
 const Home = () => {
   const navigate = useNavigate();
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
@@ -30,22 +28,6 @@ const Home = () => {
       console.error("Failed to load dashboard data", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAccept = async (id: number) => {
-    try {
-      // The ID here is the blood_request_id, we need to find it from the accepted ID or pass it correctly.
-      // Wait, the API accepts the blood_request ID.
-      // The list item is an OrganizationRequest. It has `blood_request_id`.
-      // So we should pass req.blood_request.id
-      await BloodBankAPI.acceptRequest(id);
-      // Refresh list
-      fetchDashboardData();
-      alert("Request accepted successfully!");
-    } catch (error) {
-      console.error("Failed to accept request", error);
-      alert("Failed to accept request.");
     }
   };
 
@@ -77,9 +59,9 @@ const Home = () => {
       bg: "bg-blue-50",
     },
     {
-      title: "Hospital Requests",
+      title: "Request Marketplace",
       icon: Building2,
-      path: "/blood-bank/hospital-requests",
+      path: "/blood-bank/all-requests",
       color: "text-blue-500",
       bg: "bg-blue-50",
     },
@@ -139,7 +121,7 @@ const Home = () => {
                 Recent Request:
               </h3>
               <button
-                onClick={() => navigate("/blood-bank/all-requests")}
+                onClick={() => navigate("/blood-bank/hospital-requests")}
                 className="text-blue-500 text-sm font-semibold hover:underline"
               >
                 See all request
@@ -159,7 +141,7 @@ const Home = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div
-                          className={`w-12 h-12 rounded-lg ${req.blood_group === "AB+" // Just random logic? No, use real group
+                          className={`w-12 h-12 rounded-lg ${req.blood_group === "AB+"
                             ? "bg-blue-100 text-blue-600"
                             : "bg-gray-200 text-gray-600"
                             } flex items-center justify-center font-bold text-lg`}
@@ -177,10 +159,10 @@ const Home = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => handleAccept(req.id)}
+                          onClick={() => navigate("/blood-bank/hospital-requests")}
                           className="bg-green-100 text-green-700 px-6 py-2 rounded-lg text-xs font-semibold hover:bg-green-200 transition-colors"
                         >
-                          Accept Request
+                          View
                         </button>
                         <button
                           onClick={() => handleMessage(req.organization?.user?.id)}

@@ -1,12 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { BloodBankAPI } from "@/core/services/BloodBankService";
+import ViewOffersModal from "../components/ViewOffersModal";
 
 const Requests = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewOffersModal, setViewOffersModal] = useState<{ isOpen: boolean; requestId: number | null }>({ isOpen: false, requestId: null });
 
   useEffect(() => {
     fetchRequests();
@@ -87,10 +89,10 @@ const Requests = () => {
               <div className="flex items-center gap-4">
                 <span
                   className={`px-6 py-2 rounded-lg text-xs font-bold ${request.status === "Completed" || request.status === "Approved"
-                      ? "bg-green-100 text-green-700"
-                      : request.status === "Cancelled"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-blue-50 text-blue-500"
+                    ? "bg-green-100 text-green-700"
+                    : request.status === "Cancelled"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-blue-50 text-blue-500"
                     }`}
                 >
                   {request.status}
@@ -105,6 +107,15 @@ const Requests = () => {
                   </button>
                 )}
 
+                {request.status === 'Pending' && (
+                  <button
+                    onClick={() => setViewOffersModal({ isOpen: true, requestId: request.id })}
+                    className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm flex items-center gap-2"
+                  >
+                    View Offers
+                  </button>
+                )}
+
                 <button
                   onClick={() => handleShare(request)}
                   className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-8 py-2 rounded-lg text-xs font-bold transition-colors"
@@ -115,7 +126,16 @@ const Requests = () => {
             </div>
           )))}
       </div>
-    </div>
+
+      <ViewOffersModal
+        isOpen={viewOffersModal.isOpen}
+        onClose={() => setViewOffersModal({ isOpen: false, requestId: null })}
+        requestId={viewOffersModal.requestId}
+        onSuccess={() => {
+          fetchRequests(); // Refresh status
+        }}
+      />
+    </div >
   );
 };
 
