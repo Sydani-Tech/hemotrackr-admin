@@ -1,193 +1,164 @@
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import React, { useState } from "react";
+import { ChevronLeft, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-// --- Mock Data ---
-
-const pendingRequests = [
-  {
-    id: 1,
-    hospital: "Uniport Teaching Hospital",
-    bloodType: "A-",
-    amount: "20 pints",
-    date: "9 - Sep - 2022, 13:02",
-  },
-  {
-    id: 2,
-    hospital: "Uniport Teaching Hospital",
-    bloodType: "O+",
-    amount: "2 pint",
-    date: "9 - Sep - 2022, 13:02",
-  },
-  {
-    id: 3,
-    hospital: "Uniport Teaching Hospital",
-    bloodType: "A-",
-    amount: "20 pints",
-    date: "9 - Sep - 2022, 13:02",
-  },
-  {
-    id: 4,
-    hospital: "Uniport Teaching Hospital",
-    bloodType: "O+",
-    amount: "2 pint",
-    date: "9 - Sep - 2022, 13:02",
-  },
-  {
-    id: 5,
-    hospital: "Uniport Teaching Hospital",
-    bloodType: "B+",
-    amount: "20 pints",
-    date: "9 - Sep - 2022, 13:02",
-  },
-];
+import { BloodBankAPI } from "@/core/services/BloodBankService";
+import { OfferService } from "@/core/services/OfferService";
+import { toast } from "react-toastify";
 
 // --- Components ---
 
-interface ConfirmDetailsModalProps {
+interface TrackRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProceed: () => void;
-  request: (typeof pendingRequests)[0] | null;
+  request: any | null;
+  onUpdate: () => void;
 }
 
-const ConfirmDetailsModal: React.FC<ConfirmDetailsModalProps> = ({
+const TrackRequestModal: React.FC<TrackRequestModalProps> = ({
   isOpen,
   onClose,
-  onProceed,
   request,
+  onUpdate
 }) => {
-  if (!isOpen) return null;
+  const [offers, setOffers] = useState<any[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(false);
+  const [processingOfferId, setProcessingOfferId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (isOpen && request) {
+      if (request.status === 'Pending' && (request.request_source === 'blood_banks' || request.request_source === 'both')) {
+        fetchOffers(request.id);
+      } else {
+        setOffers([]);
+      }
+    }
+  }, [isOpen, request]);
+
+  const fetchOffers = async (requestId: number) => {
+    setLoadingOffers(true);
+    try {
+      const response = await OfferService.getOffers(requestId);
+      setOffers(response.data || []);
+    } catch (error) {
+      console.error("Failed to fetch offers", error);
+    } finally {
+      setLoadingOffers(false);
+    }
+  };
+
+  const handleAcceptOffer = async (offer: any) => {
+    if (!window.confirm(`Accept offer from ${offer.organization?.name} for ₦${offer.total_amount?.toLocaleString()}?`)) return;
+
+    setProcessingOfferId(offer.id);
+    try {
+      await OfferService.acceptOffer(offer.id);
+      toast.success("Offer accepted! Delivery has been initiated.");
+      onUpdate(); // Trigger refresh in parent
+      onClose();
+    } catch (error: any) {
+      console.error("Failed to accept offer", error);
+      toast.error(error.response?.data?.message || "Failed to accept offer");
+    } finally {
+      setProcessingOfferId(null);
+    }
+  };
+
+  if (!isOpen || !request) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-      <div
-        className="absolute inset-0  transition-opacity -z-10"
-        onClick={onClose}
-      />
-      <div
-        className="
-    bg-white
-    rounded-sm
-    h-[85vh]
-    w-full
-    max-w-lg
-    shadow-2xl
-    overflow-hidden
-    animate-in fade-in zoom-in duration-200
-  "
-      >
-        <div
-          className="
-      h-full
-      overflow-y-auto
-      transition-all
-      duration-300
-
-      [&::-webkit-scrollbar]:w-2
-      [&::-webkit-scrollbar-thumb]:bg-gray-400/50
-      [&::-webkit-scrollbar-thumb]:rounded-full
-      [&::-webkit-scrollbar-track]:bg-gray-100
-    "
-        >
-          <div className="p-3  border-b border-gray-100">
-            <h2 className="text-center font-bold text-gray-800 text-sm uppercase">
-              Confirm Details
-            </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="absolute inset-0 transition-opacity -z-10" onClick={onClose} />
+      <div className="bg-white rounded-3xl w-full max-w-2xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Track Request #{request.id}</h3>
+            <p className="text-xs text-gray-500">Manage request status and offers</p>
           </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+        </div>
 
-          <div className="p-7 space-y-6">
-            <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Request Details */}
+          <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-50 mb-6">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <label className="text-xs font-bold text-gray-700 uppercase block mb-1">
-                  Request Source
-                </label>
-                <p className="text-sm text-gray-400 font-medium">
-                  12 Pint of Blood
-                </p>
+                <p className="text-xs text-gray-500 uppercase font-bold">Type</p>
+                <p className="font-semibold text-gray-900">{request.type}</p>
               </div>
-              <hr className="border-gray-100" />
-
               <div>
-                <label className="text-xs font-bold text-gray-700 uppercase block mb-1">
-                  Blood Type
-                </label>
-                <p className="text-sm text-gray-400 font-medium">
-                  {request?.bloodType || "A+"}
-                </p>
+                <p className="text-xs text-gray-500 uppercase font-bold">Blood Group</p>
+                <p className="font-semibold text-gray-900">{request.blood_group || "N/A"}</p>
               </div>
-              <hr className="border-gray-100" />
-
               <div>
-                <label className="text-xs font-bold text-gray-700 uppercase block mb-1">
-                  Delivery Address
-                </label>
-                <p className="text-sm text-gray-400 font-medium">
-                  BMH HOSPITAL - No 15 Agreey Road, Port Harcourt
-                </p>
+                <p className="text-xs text-gray-500 uppercase font-bold">Units Needed</p>
+                <p className="font-semibold text-gray-900">{request.units_needed}</p>
               </div>
-              <hr className="border-gray-100" />
-
               <div>
-                <label className="text-xs font-bold text-gray-700 uppercase block mb-2">
-                  Set Amount of Blood
-                </label>
-                <input
-                  type="number"
-                  placeholder="10"
-                  className="w-full bg-gray-100 border-none rounded-sm px-4 py-3 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/20"
-                />
-                <div className="flex gap-2 mt-2">
-                  <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full">
-                    10 Pints
-                  </span>
-                  <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
-                    5 Pints
-                  </span>
-                  <span className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
-                    2 Pints
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2">
-              <hr className="border-dashed border-gray-200" />
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500 font-bold">PRODUCT FEE</span>
-                <span className="font-bold text-gray-900">30,000</span>
-              </div>
-              <hr className="border-dashed border-gray-200" />
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500 font-bold">SHIPPING FEE</span>
-                <span className="bg-gray-100 px-2 py-1 rounded font-bold text-gray-900">
-                  5000
+                <p className="text-xs text-gray-500 uppercase font-bold">Status</p>
+                <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${request.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                  request.status === 'Processing' ? 'bg-blue-100 text-blue-700' :
+                    'bg-green-100 text-green-700'
+                  }`}>
+                  {request.status}
                 </span>
               </div>
-              <hr className="border-dashed border-gray-200" />
-              <div className="flex justify-between items-center text-sm text-blue-600">
-                <span className="font-bold">GRAND TOTAL</span>
-                <span className="font-bold">36,000</span>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-4">
-              <Button
-                onClick={onProceed}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold  rounded-md"
-              >
-                Proceed
-              </Button>
-              <Button
-                onClick={onClose}
-                variant="ghost"
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-md"
-              >
-                Go Back
-              </Button>
             </div>
           </div>
+
+          <h4 className="text-sm font-bold text-gray-900 uppercase mb-4 flex items-center gap-2">
+            Received Offers
+            {loadingOffers && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
+          </h4>
+
+          {request.status !== 'Pending' ? (
+            <div className="bg-green-50 border border-green-100 rounded-xl p-6 text-center">
+              <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
+              <p className="font-bold text-green-700">Request is {request.status}</p>
+              <p className="text-sm text-green-600">Offers are closed. Check "Deliveries" for status.</p>
+            </div>
+          ) : offers.length > 0 ? (
+            <div className="space-y-3">
+              {offers.map((offer) => (
+                <div key={offer.id} className="bg-white p-4 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-bold text-gray-900">{offer.organization?.name || "Blood Bank"}</h4>
+                      <p className="text-xs text-gray-500">{new Date(offer.created_at).toLocaleString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-blue-600">₦{offer.total_amount?.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Total Cost</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg mb-4">
+                    <span>Product: ₦{offer.product_fee?.toLocaleString()}</span>
+                    <span className="text-gray-300">|</span>
+                    <span>Shipping: ₦{offer.shipping_fee?.toLocaleString()}</span>
+                  </div>
+
+                  <Button
+                    onClick={() => handleAcceptOffer(offer)}
+                    disabled={processingOfferId === offer.id}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-10"
+                  >
+                    {processingOfferId === offer.id ? "Processing..." : "Accept Offer"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-10 text-center">
+              <AlertCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-500 font-medium">No offers received yet</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {request.request_source === 'donors'
+                  ? "This request was sent to Donors only."
+                  : "Waiting for other blood banks to respond."}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -196,183 +167,154 @@ const ConfirmDetailsModal: React.FC<ConfirmDetailsModalProps> = ({
 
 export default function HospitalRequests() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Pending Requests");
-  const [acceptedRequests, setAcceptedRequests] = useState<
-    typeof pendingRequests
-  >([]);
-  const [requests, setRequests] = useState(pendingRequests);
-  const [selectedRequest, setSelectedRequest] = useState<
-    (typeof pendingRequests)[0] | null
-  >(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("My Requests");
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleAcceptRequest = (id: number) => {
-    // Move from pending to accepted
-    const request = requests.find((r) => r.id === id);
-    if (request) {
-      setAcceptedRequests([...acceptedRequests, request]);
-      setRequests(requests.filter((r) => r.id !== id));
-      setActiveTab("Accepted Requests"); // Auto switch to show the accepted item
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const fetchRequests = async () => {
+    setLoading(true);
+    try {
+      const response = await BloodBankAPI.getMyRequests();
+      setRequests(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to fetch requests", error);
+      // toast.error("Failed to load requests"); // Optional: don't spam toasts
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSetAmount = (request: (typeof pendingRequests)[0]) => {
+  const handleTrackRequest = (request: any) => {
     setSelectedRequest(request);
-    setIsConfirmOpen(true);
+    setIsModalOpen(true);
   };
 
-  const handleProceedToRiders = () => {
-    setIsConfirmOpen(false);
-    navigate("/hospital/hospital-requests/riders");
-  };
+  const myPendingRequests = requests.filter(r => r.status === 'Pending');
+  const myHistoryRequests = requests.filter(r => r.status !== 'Pending');
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Tabs */}
-      <div className="bg-white rounded-xl p-2 flex justify-start items-center px-4 gap-4 w-fit">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-6">
         <button
-          onClick={() => setActiveTab("Pending Requests")}
-          className={`px-8 py-2 rounded-lg font-bold text-sm transition-colors ${
-            activeTab === "Pending Requests"
-              ? "bg-[#FFD600] text-gray-900"
-              : "text-gray-500 hover:bg-gray-50"
-          }`}
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 bg-black hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors"
         >
-          Pending Requests
+          <ChevronLeft className="w-5 h-5 text-white" />
         </button>
-        <button
-          onClick={() => setActiveTab("Accepted Requests")}
-          className={`px-8 py-2 rounded-lg font-bold text-sm transition-colors ${
-            activeTab === "Accepted Requests"
-              ? "bg-[#FFD600] text-gray-900"
-              : "text-gray-500 hover:bg-gray-50"
-          }`}
-        >
-          Accepted Requests
-        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">My Request History</h2>
+          <p className="text-sm text-gray-500">Manage requests you have made</p>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-[500px]">
-        <div className="flex items-center gap-4 mb-6">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 mb-6 gap-6">
           <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 bg-black hover:bg-gray-800 rounded-full flex items-center justify-center transition-colors"
+            onClick={() => setActiveTab("My Requests")}
+            className={`pb-3 px-2 text-sm font-bold transition-colors border-b-2 ${activeTab === "My Requests"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-400 hover:text-gray-600"
+              }`}
           >
-            <ChevronLeft className="w-5 h-5 text-white" />
+            Active Requests ({myPendingRequests.length})
           </button>
-          <h2 className="text-2xl font-bold text-gray-900">Blood requests</h2>
+          <button
+            onClick={() => setActiveTab("History")}
+            className={`pb-3 px-2 text-sm font-bold transition-colors border-b-2 ${activeTab === "History"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-400 hover:text-gray-600"
+              }`}
+          >
+            All History ({myHistoryRequests.length})
+          </button>
         </div>
 
-        <div className="bg-gray-50 p-4 rounded-xl flex items-center justify-between mb-8">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Search"
-              className="w-full bg-transparent pl-4 pr-10 py-2 text-sm focus:outline-none placeholder-gray-400"
-            />
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
           </div>
-        </div>
-
-        <div className="flex justify-between items-center text-xs font-bold text-gray-400 mb-4 px-4 uppercase">
-          <span>Sort by</span>
-          <span className="flex items-center gap-1 cursor-pointer">
-            All Request <ChevronRight className="w-3 h-3 rotate-90" />
-          </span>
-        </div>
-
-        <div className="space-y-4">
-          {activeTab === "Pending Requests" &&
-            requests.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-4 rounded-xl transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center font-bold text-blue-600 text-lg">
-                    {item.bloodType}
+        ) : (
+          <div className="space-y-4">
+            {activeTab === "My Requests" && (
+              myPendingRequests.length > 0 ? myPendingRequests.map((item) => (
+                <div key={item.id} className="flex items-center justify-between py-4 border-b border-gray-50 hover:bg-gray-50 px-4 rounded-xl transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center font-bold text-red-600 text-lg border border-red-100">
+                      {item.blood_group}
+                    </div>
+                    <div>
+                      <h3 className="text-gray-900 font-bold text-sm">
+                        {item.type} Request
+                      </h3>
+                      <p className="text-gray-400 text-xs">
+                        {item.units_needed} units • {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-gray-900 font-bold text-sm">
-                      {item.hospital}
-                    </h3>
-                    <p className="text-gray-400 text-xs">
-                      {item.amount} • {item.date}
-                    </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => handleTrackRequest(item)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-9"
+                    >
+                      Track Offers
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => handleAcceptRequest(item.id)}
-                    className="bg-green-200 text-green-700 hover:bg-green-200 px-6 py-2 rounded-sm text-xs font-bold transition-colors"
-                  >
-                    Accept Request
-                  </button>
-
-                  <button className="bg-[#C6C8D6] text-gray-800 hover:bg-gray-400 px-6 py-2 rounded-sm text-xs font-bold transition-colors">
-                    Message
-                  </button>
+              )) : (
+                <div className="text-center py-20 text-gray-400">
+                  <p>No active requests</p>
+                  <Button variant="link" className="text-blue-500" onClick={() => navigate('/hospital/make-request')}>Make a request</Button>
                 </div>
-              </div>
-            ))}
+              )
+            )}
 
-          {activeTab === "Accepted Requests" &&
-            acceptedRequests.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-4 rounded-xl transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center font-bold text-blue-600 text-lg">
-                    {item.bloodType}
+            {activeTab === "History" && (
+              myHistoryRequests.length > 0 ? myHistoryRequests.map((item) => (
+                <div key={item.id} className="flex items-center justify-between py-4 border-b border-gray-50 hover:bg-gray-50 px-4 rounded-xl transition-colors opacity-75">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center font-bold text-gray-500 text-lg border border-gray-200">
+                      {item.blood_group}
+                    </div>
+                    <div>
+                      <h3 className="text-gray-900 font-bold text-sm">
+                        {item.type} Request
+                      </h3>
+                      <p className="text-gray-400 text-xs">
+                        {item.status} • {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-gray-900 font-bold text-sm">
-                      {item.hospital}
-                    </h3>
-                    <p className="text-gray-400 text-xs">
-                      {item.amount} • {item.date}
-                    </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => handleTrackRequest(item)}
+                      variant="outline"
+                      className="border-gray-200 text-gray-600 h-9 text-xs"
+                    >
+                      View Details
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => handleSetAmount(item)}
-                    className="bg-green-500 text-white hover:bg-green-600 px-6 py-2 rounded-lg text-xs font-bold transition-colors"
-                  >
-                    Set Amount
-                  </button>
-                  <button className="bg-[#C6C8D6] text-gray-800 hover:bg-gray-400 px-6 py-2 rounded-lg text-xs font-bold transition-colors">
-                    Message
-                  </button>
-                </div>
-              </div>
-            ))}
-
-          {/* Right Side Promo - Only visible on large layout if needed based on design, 
-                     but design shows full width list with promo on right column in Dashboard generally.
-                     Here we focus on the list as per image.
-                  */}
-        </div>
-
-        {/* If Pending list is empty and we are on Pending tab */}
-        {activeTab === "Pending Requests" && requests.length === 0 && (
-          <div className="text-center py-20 text-gray-400">
-            No pending requests
-          </div>
-        )}
-        {activeTab === "Accepted Requests" && acceptedRequests.length === 0 && (
-          <div className="text-center py-20 text-gray-400">
-            No accepted requests yet. Accept some from Pending tab.
+              )) : (
+                <div className="text-center py-20 text-gray-400">No history found</div>
+              )
+            )}
           </div>
         )}
       </div>
 
-      <ConfirmDetailsModal
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
-        onProceed={handleProceedToRiders}
+      <TrackRequestModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         request={selectedRequest}
+        onUpdate={fetchRequests}
       />
     </div>
   );

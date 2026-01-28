@@ -6,13 +6,34 @@ import {
   Building2,
   Layers,
   Users,
+  Loader2,
 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { HospitalAPI } from "@/core/services/HospitalService";
 import MedicalTestModal from "../components/MedicalTestModal";
 
 // import blood from "../../assets/icons/blood.svg";
 
 const Home = () => {
   const navigate = useNavigate();
+  const [recentRequests, setRecentRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      const response = await HospitalAPI.getDashboard();
+      setRecentRequests(response.data.recent_requests || []);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const menuItems = [
     {
@@ -102,43 +123,62 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className="space-y-4">
-              {[1, 2, 3].map((item) => (
-                <div
-                  key={item}
-                  className="bg-white rounded-xl p-4 flex items-center justify-between border border-gray-100"
-                >
-                  <div className="flex items-center gap-4">
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentRequests.length > 0 ? (
+                  recentRequests.slice(0, 3).map((request) => (
                     <div
-                      className={`w-12 h-12 rounded-lg ${
-                        item === 2
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-gray-200 text-gray-600"
-                      } flex items-center justify-center font-bold text-lg`}
+                      key={request.id}
+                      className="bg-white rounded-xl p-4 flex items-center justify-between border border-gray-100"
                     >
-                      {item === 2 ? "O+" : "A-"}
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg"
+                        >
+                          {request.blood_group}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-700">
+                            Request #{request.id}
+                          </h4>
+                          <p className="text-xs text-gray-400">
+                            {request.units_needed || request.units_requested} pint{(request.units_needed || request.units_requested) > 1 ? 's' : ''} •{" "}
+                            {new Date(request.created_at).toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })},{" "}
+                            {new Date(request.created_at).toLocaleTimeString("en-GB", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate(`/hospital/requests`)}
+                          className="bg-green-100 text-green-700 px-6 py-2 rounded-lg text-xs font-semibold hover:bg-green-200 transition-colors"
+                        >
+                          View Request
+                        </button>
+                        <button className="bg-blue-100 text-blue-700 px-6 py-2 rounded-lg text-xs font-semibold hover:bg-blue-200 transition-colors">
+                          Message
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-700">
-                        Uniport Teaching Hospital
-                      </h4>
-                      <p className="text-xs text-gray-400">
-                        {item === 2 ? "2 pint" : "20 pints"} • 9 - Sep - 2022,
-                        13:02
-                      </p>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <p>No recent requests</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button className="bg-green-100 text-green-700 px-6 py-2 rounded-lg text-xs font-semibold hover:bg-green-200 transition-colors">
-                      Accept Request
-                    </button>
-                    <button className="bg-blue-100 text-blue-700 px-6 py-2 rounded-lg text-xs font-semibold hover:bg-blue-200 transition-colors">
-                      Message
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

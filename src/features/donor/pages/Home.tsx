@@ -1,22 +1,50 @@
-import {Clock, MessageSquare} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DonorAPI } from "../../../core/services/DonorService";
+import type { DonorDashboardData } from "../../../core/services/DonorService";
 
 const Home = () => {
+  const [data, setData] = useState<DonorDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await DonorAPI.getDashboardStats();
+        setData(response.data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="bg-white rounded-3xl p-8 flex items-center justify-between relative overflow-hidden">
         <div className="relative z-10 max-w-xl">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-            WELCOME
+            WELCOME{data?.donor?.name ? `, ${data.donor.name}` : ''}
           </p>
           <h1 className="text-4xl font-serif text-gray-900 mb-4">
             Start by donating to save a life.
           </h1>
           <p className="text-gray-500 mb-8 leading-relaxed">
-            Lorem ipsum dolor sit amet consectetur. Aliquet elit hac facilisis
-            non faucibus mi vestibulum mattis et. Sed quis consequat integer
-            accumsan amet nunc libero lacus et. Vitae risus curabitur.
+            Your donation can be the difference between life and death.
+            Join our community of heroes today.
           </p>
           <div className="flex items-center gap-4">
             <Link
@@ -35,7 +63,7 @@ const Home = () => {
                 ))}
               </div>
               <span className="text-sm text-gray-500 font-medium">
-                18,887 Blood Donors
+                {data?.stats?.global_donations_count ? new Intl.NumberFormat().format(data.stats.global_donations_count) : 0} Blood Donors
               </span>
             </div>
           </div>
@@ -68,70 +96,80 @@ const Home = () => {
         <h2 className="text-2xl font-serif text-gray-900 mb-6">Shortcuts</h2>
         <div className="space-y-4">
           {/* Walk in Blood Donation */}
-          <div className="bg-white border border-blue-500 rounded-2xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow cursor-pointer">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
-                !!
+          <Link to="/donor/blood-banks" className="block">
+            <div className="bg-white border border-blue-500 rounded-2xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">
+                  !!
+                </div>
+                <span className="font-medium text-gray-900">
+                  Walk in Blood Donation
+                </span>
               </div>
-              <span className="font-medium text-gray-900">
-                Walk in Blood Donation
-              </span>
-            </div>
 
-            {/* Status/Badge */}
-            <div className="absolute -top-1 right-12">
-              <div className="bg-[#FFD600] px-3 py-1 rounded-b-lg shadow-sm">
-                <span className="text-xs font-bold">Start</span>
+              {/* Status/Badge - Dynamic based on eligibility */}
+              <div className="absolute -top-1 right-12">
+                <div className={`px-3 py-1 rounded-b-lg shadow-sm ${data?.eligibility?.is_eligible ? 'bg-green-500 text-white' : 'bg-[#FFD600] text-gray-900'}`}>
+                  <span className="text-xs font-bold">
+                    {data?.eligibility?.is_eligible ? 'Eligible' : 'Deferred'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="w-8 h-8 rounded-full overflow-hidden">
+                <img src={`https://ui-avatars.com/api/?name=${data?.donor?.name || 'User'}`} alt="User" />
               </div>
             </div>
-
-            <div className="w-8 h-8 rounded-full overflow-hidden">
-              <img src="https://ui-avatars.com/api/?name=User" alt="User" />
-            </div>
-          </div>
+          </Link>
 
           {/* Schedule a donation */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                <Clock className="w-5 h-5" />
+          <Link to="/donor/appointments/create" className="block">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <span className="font-medium text-gray-700">
+                  Schedule a donation
+                </span>
               </div>
-              <span className="font-medium text-gray-700">
-                Schedule a donation
-              </span>
+              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <div className="w-3 h-3 text-gray-400">✓</div>
+              </div>
             </div>
-            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-              <div className="w-3 h-3 text-gray-400">✓</div>
-            </div>
-          </div>
+          </Link>
 
           {/* Message */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                <MessageSquare className="w-5 h-5" />
+          <Link to="/donor/messages" className="block">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <span className="font-medium text-gray-700">Message</span>
               </div>
-              <span className="font-medium text-gray-700">Message</span>
+              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <div className="w-3 h-3 text-gray-400">✓</div>
+              </div>
             </div>
-            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-              <div className="w-3 h-3 text-gray-400">✓</div>
-            </div>
-          </div>
+          </Link>
 
           {/* Donation History */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                <Clock className="w-5 h-5" />
+          <Link to="/donor/donations" className="block">
+            <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between hover:border-gray-200 transition-colors cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <span className="font-medium text-gray-700">
+                  Donation History
+                </span>
               </div>
-              <span className="font-medium text-gray-700">
-                Donation History
-              </span>
+              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <div className="w-3 h-3 text-gray-400">✓</div>
+              </div>
             </div>
-            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-              <div className="w-3 h-3 text-gray-400">✓</div>
-            </div>
-          </div>
+          </Link>
         </div>
       </div>
     </div>

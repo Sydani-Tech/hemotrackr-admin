@@ -1,0 +1,3 @@
+﻿src/features/blood-bank/pages/AllRequests.tsx(33,11): error TS6133: '_handleAccept' is declared but its value is never read.
+src/features/blood-bank/pages/InventoryPage.tsx(118,9): error TS6133: '_wholeBloodOutOfStock' is declared but its value is never read.
+src/features/blood-bank/pages/InventoryPage.tsx(124,9): error TS6133: '_plateletsOutOfStock' is declared but its value is never read.

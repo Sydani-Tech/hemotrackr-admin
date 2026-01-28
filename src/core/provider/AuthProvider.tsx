@@ -86,34 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.setItem("user", JSON.stringify(responseUser));
       localStorage.setItem("role", responseRole);
 
-      console.log(
-        "AuthProvider: State updated, navigating based on role...",
-        responseRole,
-      );
-
-      // Redirect based on role
-      switch (responseRole) {
-        case "blood_banks":
-          navigate("/blood-bank/dashboard");
-          break;
-        case "donor":
-          navigate("/donor/dashboard");
-          break;
-        case "facilities":
-          navigate("/hospital/dashboard");
-          break;
-        case "admin": // Assuming admin role string
-          navigate("/regulation/dashboard");
-          break;
-        case "regulatory_body":
-          console.log("AuthProvider: Navigating to /regulation/dashboard");
-          navigate("/regulation/dashboard");
-          break;
-        default:
-          console.warn("AuthProvider: Unknown role, navigating to /");
-          navigate("/");
-          break;
-      }
+      handleNavigation(responseRole);
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -121,6 +94,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(false);
     }
   };
+
+  const handleNavigation = (role: UserRole) => {
+    console.log(
+      "AuthProvider: State updated, navigating based on role...",
+      role,
+    );
+
+    // Redirect based on role
+    switch (role) {
+      case "blood_banks":
+        navigate("/blood-bank/dashboard");
+        break;
+      case "donor":
+        navigate("/donor/dashboard");
+        break;
+      case "facilities":
+        navigate("/hospital/dashboard");
+        break;
+      case "admin":
+        navigate("/admin/dashboard");
+        break;
+      case "regulatory_body":
+        navigate("/regulation/dashboard");
+        break;
+      default:
+        console.warn("AuthProvider: Unknown role, navigating to /");
+        navigate("/");
+        break;
+    }
+  };
+
 
   /* New method to set auth data from external sources (like React Query mutation) */
   const setAuthData = (data: LoginResponse) => {
@@ -142,6 +146,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     localStorage.setItem("token", responseToken);
     localStorage.setItem("user", JSON.stringify(responseUser));
     localStorage.setItem("role", responseRole);
+
+    // Trigger navigation
+    handleNavigation(responseRole);
   };
 
   const logout = () => {

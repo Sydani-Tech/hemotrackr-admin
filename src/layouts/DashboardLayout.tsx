@@ -5,14 +5,40 @@ import {
   MessageCircle,
   Bell,
   Search,
-  Calendar,
+  Info,
 } from "lucide-react";
+import { DonorAPI } from "../core/services/DonorService";
+import type { Notification } from "../core/services/DonorService";
 
 const DashboardLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Fetch User and Notifications
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [profileRes, notifRes] = await Promise.all([
+          DonorAPI.getProfile(),
+          DonorAPI.getNotifications(),
+        ]);
+
+        setUser(profileRes.data.user || profileRes.data);
+        const fetchedNotifs = notifRes.data.data || [];
+        setNotifications(fetchedNotifs);
+        setUnreadCount(fetchedNotifs.filter((n: Notification) => !n.read_at).length);
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
 
   // Close notifications on click outside
   useEffect(() => {
@@ -31,17 +57,7 @@ const DashboardLayout = () => {
     };
   }, []);
 
-  const notifications = [
-    {
-      id: 1,
-      title: "Donor Appointment",
-      message: "Your appointment has been secured",
-      time: "Tuesday, June 14, 2024 18:16:1",
-      icon: Calendar,
-      type: "appointment",
-    },
-    // ... other notifications
-  ];
+
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -72,7 +88,7 @@ const DashboardLayout = () => {
                 Good Morning
               </h1>
               <p className="lg:text-sm text-xs text-gray-500">
-                Welcome back, Preye
+                Welcome back, {user?.first_name || 'Donor'}
               </p>
             </div>
           </div>
@@ -97,7 +113,9 @@ const DashboardLayout = () => {
               >
                 <Bell className="w-6 h-6" />
                 {/* Notification Dot */}
-                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                )}
               </button>
 
               {/* Notifications Modal */}
@@ -118,43 +136,37 @@ const DashboardLayout = () => {
                     </button>
                   </div>
                   <div className="max-h-[400px] overflow-y-auto">
-                    {notifications.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer mb-1 last:mb-0"
-                      >
-                        <div className="flex gap-3">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                              item.type === "appointment"
-                                ? "bg-blue-100 text-blue-600"
-                                : item.type === "request"
-                                  ? "bg-gray-100 text-gray-600"
-                                  : "bg-blue-100 text-blue-600"
-                            }`}
-                          >
-                            <item.icon className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <h4
-                              className={`text-sm font-bold ${
-                                item.type === "appointment"
-                                  ? "text-blue-600"
-                                  : "text-gray-800"
-                              }`}
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500 text-sm">
+                        No notifications yet.
+                      </div>
+                    ) : (
+                      notifications.map((item) => (
+                        <div
+                          key={item.id}
+                          className={`p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer mb-1 last:mb-0 ${!item.read_at ? 'bg-blue-50/50' : ''}`}
+                        >
+                          <div className="flex gap-3">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-blue-100 text-blue-600"
                             >
-                              {item.title}
-                            </h4>
-                            <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                              {item.message}
-                            </p>
-                            <p className="text-[10px] text-gray-400 mt-2">
-                              {item.time}
-                            </p>
+                              <Info className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-gray-800">
+                                {item.data.title || "Notification"}
+                              </h4>
+                              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                {item.data.message}
+                              </p>
+                              <p className="text-[10px] text-gray-400 mt-2">
+                                {new Date(item.created_at).toLocaleString()}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -162,8 +174,14 @@ const DashboardLayout = () => {
 
             <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
               <img
-                src="https://ui-avatars.com/api/?name=Preye&background=random"
+                src={user?.profile_picture_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user ? `${user.first_name} ${user.last_name}` : 'User')}&background=random`}
                 alt="Profile"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  const name = user ? `${user.first_name} ${user.last_name}` : 'User';
+                  target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+                }}
               />
             </div>
           </div>
