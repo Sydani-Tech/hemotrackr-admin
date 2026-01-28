@@ -30,16 +30,8 @@ const AllRequests = () => {
         }
     };
 
-    const handleAccept = async (id: number) => {
-        try {
-            await BloodBankAPI.acceptRequest(id);
-            alert("Request accepted successfully!");
-            fetchRequests();
-        } catch (error) {
-            console.error("Failed to accept request", error);
-            alert("Failed to accept request.");
-        }
-    };
+
+    // Note: Accept functionality moved to offers - removed unused handler
 
     const checkOfferStatus = async (requestId: number) => {
         setOfferStates(prev => ({ ...prev, [requestId]: { hasOffer: false, offer: null, loading: true } }));

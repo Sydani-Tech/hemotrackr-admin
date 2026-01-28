@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Bell, ChevronLeft, MessageCircle, Search, Loader2 } from "lucide-react";
+import { ChevronLeft, Search, Loader2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import PaymentSuccessModal from "../../components/PaymentSuccessfulModal";
@@ -112,7 +112,7 @@ const ConfirmDeliveryModal: React.FC<ConfirmDeliveryModalProps> = ({
 export default function Riders() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("Available Riders");
+  // Tab state removed - using static tabs for now
   const [riders, setRiders] = useState<Rider[]>([]);
   const [selectedRider, setSelectedRider] = useState<Rider | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);

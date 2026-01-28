@@ -12,8 +12,8 @@ const ScheduleDonation = () => {
   const [searchParams] = useSearchParams();
   const requestId = searchParams.get('requestId');
 
-  const [request, setRequest] = useState<any | null>(null);
-  const [loadingRequest, setLoadingRequest] = useState(false);
+  const [_request, setRequest] = useState<any | null>(null);
+  const [_loadingRequest, setLoadingRequest] = useState(false);
 
   const [donationType, setDonationType] = useState<
     "Blood" | "Platelets" | "Bone Marrow"

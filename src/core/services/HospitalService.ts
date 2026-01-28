@@ -79,10 +79,17 @@ export class HospitalAPI {
   }
 
   /**
+   * Get facility profile
+   */
+  static async getProfile() {
+    return authInstance.get("/facilities/profile");
+  }
+
+  /**
    * Update facility profile
    */
   static async updateProfile(data: any) {
-    return authInstance.post("/facilities/profile", data);
+    return authInstance.put("/facilities/profile", data);
   }
 
   /**
@@ -106,4 +113,50 @@ export class HospitalAPI {
       headers: { "Content-Type": "multipart/form-data" },
     });
   }
+
+  // =========================================================================
+  // Blood Request Management
+  // =========================================================================
+
+  /**
+   * Get all blood requests created by this hospital
+   */
+  static async getMyRequests(params?: {
+    status?: string;
+    blood_group?: string;
+    type?: string;
+    page?: number;
+    per_page?: number;
+  }) {
+    return authInstance.get("/blood-requests/my-created-request", { params });
+  }
+
+  /**
+   * Cancel a blood request
+   */
+  static async cancelRequest(id: number) {
+    return authInstance.post(`/blood-requests/${id}/cancel`);
+  }
+
+  /**
+   * Get offers from blood banks for a specific request
+   */
+  static async getOffersForRequest(requestId: number) {
+    return authInstance.get(`/facilities/blood-requests/${requestId}/offers`);
+  }
+
+  /**
+   * Accept an offer from a blood bank
+   */
+  static async acceptOffer(offerId: number) {
+    return authInstance.post(`/facilities/offers/${offerId}/accept`);
+  }
+
+  /**
+   * Reject an offer from a blood bank
+   */
+  static async rejectOffer(offerId: number) {
+    return authInstance.post(`/facilities/offers/${offerId}/reject`);
+  }
 }
+

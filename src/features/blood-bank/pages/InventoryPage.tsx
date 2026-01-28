@@ -115,15 +115,11 @@ export default function InventoryPage() {
   const wholeBloodInStock = inventoryItems.filter(
     (item) => item.type === "Whole Blood" && item.units > 0
   );
-  const wholeBloodOutOfStock = inventoryItems.filter(
-    (item) => item.type === "Whole Blood" && item.units === 0
-  );
+  // Out of stock filters removed - not currently displayed
   const plateletsInStock = inventoryItems.filter(
     (item) => (item.type === "PLT" || item.type === "Platelets") && item.units > 0
   );
-  const plateletsOutOfStock = inventoryItems.filter(
-    (item) => (item.type === "PLT" || item.type === "Platelets") && item.units === 0
-  );
+  // Platelets out of stock filter removed - not currently displayed
 
   const totalWholeBlood = wholeBloodInStock.reduce((sum, item) => sum + item.units, 0);
   const totalPlatelets = plateletsInStock.reduce((sum, item) => sum + item.units, 0);
@@ -140,7 +136,7 @@ export default function InventoryPage() {
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">{user?.name || "Blood Bank"}</h2>
+          <h2 className="text-xl font-bold text-gray-900">{(user as any)?.organization?.name || (user as any)?.first_name || "Blood Bank"}</h2>
           <p className="text-sm text-gray-500">Blood Inventory Management</p>
         </div>
         <div className="flex gap-2 sm:gap-3">

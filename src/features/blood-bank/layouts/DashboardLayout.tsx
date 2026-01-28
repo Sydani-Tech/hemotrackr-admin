@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import { MessageCircle, Bell, Search, Plus, User } from "lucide-react";
+import { MessageCircle, Bell, Search } from "lucide-react";
 import { BloodBankAPI } from "@/core/services/BloodBankService";
 
 const DashboardLayout = () => {

@@ -10,16 +10,15 @@ import {
     Instagram,
     Linkedin
 } from "lucide-react";
-import { BloodBankAPI } from "@/core/services/BloodBankService";
+import { HospitalAPI } from "@/core/services/HospitalService";
 import { toast } from "react-toastify";
 
 const Settings = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
-        receive_notifications: false,
-        show_inventory: false,
-        show_contact: false,
+        receive_notifications: true,
+        show_contact: true,
         facebook_link: "",
         twitter_link: "",
         instagram_link: "",
@@ -32,21 +31,20 @@ const Settings = () => {
 
     const fetchSettings = async () => {
         try {
-            const response = await BloodBankAPI.getSettings();
-            if (response.data.data) {
+            const response = await HospitalAPI.getProfile();
+            const org = response.data.organization;
+            if (org) {
                 setFormData({
-                    receive_notifications: !!response.data.data.receive_notifications,
-                    show_inventory: !!response.data.data.show_inventory,
-                    show_contact: !!response.data.data.show_contact,
-                    facebook_link: response.data.data.facebook_link || "",
-                    twitter_link: response.data.data.twitter_link || "",
-                    instagram_link: response.data.data.instagram_link || "",
-                    linkedin_link: response.data.data.linkedin_link || "",
+                    receive_notifications: true, // Default, could be expanded in backend
+                    show_contact: true, // Default, could be expanded in backend
+                    facebook_link: org.social_links?.facebook || "",
+                    twitter_link: org.social_links?.twitter || "",
+                    instagram_link: org.social_links?.instagram || "",
+                    linkedin_link: org.social_links?.linkedin || "",
                 });
             }
         } catch (error) {
             console.error("Failed to fetch settings", error);
-            // toast.error("Failed to load settings");
         } finally {
             setLoading(false);
         }
@@ -64,7 +62,12 @@ const Settings = () => {
         e.preventDefault();
         setSaving(true);
         try {
-            await BloodBankAPI.updateSettings(formData);
+            await HospitalAPI.updateProfile({
+                facebook_link: formData.facebook_link,
+                twitter_link: formData.twitter_link,
+                instagram_link: formData.instagram_link,
+                linkedin_link: formData.linkedin_link,
+            });
             toast.success("Settings updated successfully");
         } catch (error: any) {
             console.error("Failed to update settings", error);
@@ -108,7 +111,7 @@ const Settings = () => {
                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                             <div>
                                 <h4 className="text-sm font-semibold text-gray-700">Receive Push Notifications</h4>
-                                <p className="text-xs text-gray-400">Get alerted for new requests and updates</p>
+                                <p className="text-xs text-gray-400">Get alerted for blood requests and updates</p>
                             </div>
                             <label className="relative inline-flex items-center cursor-pointer">
                                 <input
@@ -136,23 +139,6 @@ const Settings = () => {
                         </div>
 
                         <div className="space-y-3">
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                                <div>
-                                    <h4 className="text-sm font-semibold text-gray-700">Public Inventory</h4>
-                                    <p className="text-xs text-gray-400">Allow hospitals to search your stock</p>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        name="show_inventory"
-                                        checked={formData.show_inventory}
-                                        onChange={handleChange}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                                </label>
-                            </div>
-
                             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                                 <div>
                                     <h4 className="text-sm font-semibold text-gray-700">Show Contact Info</h4>

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { BloodBankAPI } from "@/core/services/BloodBankService";
 import ViewOffersModal from "../components/ViewOffersModal";

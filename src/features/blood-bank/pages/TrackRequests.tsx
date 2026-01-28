@@ -51,23 +51,8 @@ const TrackRequests = () => {
   const fetchOffers = async (requestId: number) => {
     setLoadingOffers(true);
     try {
-      const response = await OfferService.getOffersForRequest(requestId);
-      // The API returns { success: true, data: [...] } for index or checkUserOffer might return { has_offer... }
-      // Wait, let's check OfferService implementation. 
-      // getOffersForRequest uses /check-offer which returns single offer for user?
-      // No, for the BUYER to see ALL offers, we need a list endpoint.
-      // Checking OfferController::index -> this lists all offers for a request.
-      // So I need to update OfferService to use /offers/request/{id} or similar if exists?
-      // In OfferController: public function index(BloodRequest $bloodRequest) exists.
-      // Route is likely /api/blood-requests/{id}/offers based on resource controller conventions, but let me check api.php
-      // Wait, I didn't see the index route in api.php in previous turns. I should check or add it.
-      // Assuming I'll add it or it exists. Let's try /blood-requests/{id}/offers
-
-      // Temporary fix: I will use the endpoint likely available or add it.
-      // Let's assume OfferService needs update to fetch LIST.
-      // For now, I will use /blood-requests/{id}/offers
-      const res = await OfferService.getOffersList(requestId);
-      setOffers(res.data);
+      const offers = await OfferService.getOffers(requestId);
+      setOffers(offers);
     } catch (error) {
       console.error("Failed to fetch offers", error);
     } finally {

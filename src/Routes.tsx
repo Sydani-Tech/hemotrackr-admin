@@ -59,6 +59,8 @@ import HospitalSupport from "./features/hospital/pages/AccountSupport";
 import HospitalMessages from "./features/hospital/pages/Messages";
 import HospitalDonations from "./features/hospital/pages/Donations";
 import HospitalRequestsFromOthers from "./features/hospital/pages/hospital-requests/HospitalRequests";
+import HospitalNotifications from "./features/hospital/pages/Notifications";
+import HospitalSettings from "./features/hospital/pages/Settings";
 import HospitalProfileLayout from "./features/hospital/components/ProfileLayout";
 import RegulatoryBodyLayout from "./features/reulatory-body/layouts/RegulatoryBodyLayout";
 import RegulatoryBodyHome from "./features/reulatory-body/pages/RegulatoryBodyHome";
@@ -233,12 +235,15 @@ const router = createBrowserRouter([
               { path: "donations", element: <HospitalDonations /> },
               { path: "messages", element: <HospitalMessages /> },
               { path: "feedback", element: <HospitalFeedback /> },
+              { path: "notifications", element: <HospitalNotifications /> },
+              { path: "settings", element: <HospitalSettings /> },
               {
                 path: "profile",
                 element: <HospitalProfileLayout />,
                 children: [
                   { index: true, element: <HospitalProfile /> },
                   { path: "support", element: <HospitalSupport /> },
+                  { path: "settings", element: <HospitalSettings /> },
                 ],
               },
               {
